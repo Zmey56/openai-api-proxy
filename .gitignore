@@ -1,0 +1,6 @@
+*.ipynb
+test/
+.idea/
+.ipynb_checkpoints/
+*.db
+testusers.go
