@@ -1,12 +1,10 @@
 package authorization
 
 import (
-	"bytes"
+	"fmt"
 	"github.com/Zmey56/openai-api-proxy/repository"
-	"github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -25,48 +23,38 @@ type LoginResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func Authorization(w http.ResponseWriter, r *http.Request) {
-	jwtSecretKey := []byte(os.Getenv("jwtSecretKey"))
+func Authorization(tokens map[string]Token) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-	if bytes.Equal(jwtSecretKey, []byte{}) {
-		jwtSecretKey = []byte("jwtSecretKey")
+		//  If the request is by the GET method, then we show the form
+		if r.Method != "POST" {
+			http.NotFound(w, r)
+		}
+
+		// If the request is made by the POST method, then we check the data
+		login := r.FormValue("login")
+		password := r.FormValue("password")
+
+		//If  he has a different password, we return the error and return to the authentication page
+
+		checkPassword, err := repository.CheckPassword(login, password)
+		log.Println(checkPassword)
+		if err != nil || !checkPassword {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+
+		tokenValue := generateToken(login)
+		expiresAt := time.Now().Add(time.Hour)
+		token := Token{Value: tokenValue, ExpiresAt: expiresAt, Username: login}
+		tokens[tokenValue] = token
+
+		w.Header().Set("Authorization", "Bearer "+tokenValue)
+		http.Redirect(w, r, "/openai", http.StatusFound)
 	}
+}
 
-	//  If the request is by the GET method, then we show the form
-	if r.Method != "POST" {
-		http.NotFound(w, r)
-	}
-
-	// If the request is made by the POST method, then we check the data
-	login := r.FormValue("login")
-	password := r.FormValue("password")
-
-	//If  he has a different password, we return the error and return to the authentication page
-
-	checkPassword, err := repository.CheckPassword(login, password)
-	log.Println(checkPassword)
-	if err != nil || !checkPassword {
-		http.Redirect(w, r, "/", http.StatusFound)
-		return
-	}
-
-	//Generating useful data that will be stored in the token
-	payload := jwt.MapClaims{
-		"sub": login,
-		"exp": time.Now().Add(time.Minute * 72).Unix(),
-	}
-
-	// Create a new JWT token and sign it using the HS256 algorithm
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
-
-	t, err := token.SignedString(jwtSecretKey)
-	if err != nil {
-		log.Println("JWT token signing")
-		w.WriteHeader(http.StatusInternalServerError)
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-
-	w.Header().Set("Authorization", "Bearer "+t)
-	http.Redirect(w, r, "/openai", http.StatusFound)
+func generateToken(username string) string {
+	tokenValue := fmt.Sprintf("%d_%s", time.Now().Add(time.Hour), username)
+	return tokenValue
 }

@@ -7,12 +7,15 @@ import (
 	"net/http"
 )
 
+var tokens = make(map[string]authorization.Token)
+
 func main() {
 
 	http.HandleFunc("/", handlers.LoginTemplate)
-	http.HandleFunc("/login/", authorization.Authorization)
-
-	http.HandleFunc("/openai/", authorization.Authorization)
+	http.HandleFunc("/login/", authorization.Authorization(tokens))
+	http.HandleFunc("/openai", handlers.ChatGPT(tokens))
+	//http.HandleFunc("/openai", handlers.ChatGPT(tokens))
+	//http.HandleFunc("/openai/", authorization.Authorization(tokens))
 
 	log.Fatal(http.ListenAndServe(":8081", nil))
 
