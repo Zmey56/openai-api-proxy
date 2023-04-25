@@ -1,14 +1,14 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
+	"github.com/Zmey56/openai-api-proxy/chat"
+	"github.com/Zmey56/openai-api-proxy/completion"
+	"log"
 	"os"
 	"strings"
 )
-
-var model string
 
 var (
 	defaultGoal  = "chat"
@@ -19,25 +19,29 @@ var (
 
 func init() {
 	flag.StringVar(&selectedGoal, "goals", defaultGoal, fmt.Sprintf("select a model from: %v ", strings.Join(allowedGoals, ", ")))
-	flag.StringVar(&selectedGoal, "m", defaultGoal, fmt.Sprintf("'select a model from: %v'", strings.Join(allowedGoals, ", ")))
+	flag.StringVar(&selectedGoal, "g", defaultGoal, fmt.Sprintf("'select a model from: %v'", strings.Join(allowedGoals, ", ")))
 }
 
 func main() {
 
 	flag.Parse()
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		errors.New("you api key is empty")
-	}
+	apiKey := os.Getenv("API_KEY_OPENAI")
+	//if len(apiKey) < 1 {
+	//	log.Fatal("Not api key")
+	//}
 
-	switch model {
+	log.Println(selectedGoal)
+
+	switch selectedGoal {
 	case "list":
 		fmt.Println("LIST")
 	case "completion":
 		fmt.Println("completion")
+		completion.CompletionOpenAI(apiKey)
 	case "chat":
 		fmt.Println("chat")
+		chat.ChatOpenAI(apiKey)
 	case "edits":
 		fmt.Println("edits")
 	case "images":
