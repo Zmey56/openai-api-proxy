@@ -1,11 +1,11 @@
 package chat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 type MessageChat struct {
@@ -15,21 +15,26 @@ type MessageChat struct {
 }
 
 type RequestBodyChat struct {
-	Model            string            `json:"model"`
-	Messages         []MessageChat     `json:"messages"`
-	Temperature      int               `json:"temperature"`
-	TopP             int               `json:"top_p"`
-	N                int               `json:"n"`
-	Stream           bool              `json:"stream"`
-	Stop             string            `json:"stop"`
-	MaxTokens        int               `json:"max_tokens"`
-	PresencePenalty  int               `json:"presence_penalty"`
-	FrequencyPenalty int               `json:"frequency_penalty"`
-	LogitBias        map[string]string `json:"logit_bias"`
-	User             string            `json:"user"`
+	Model            string         `json:"model"`
+	Messages         []MessageChat  `json:"messages"`
+	Temperature      int            `json:"temperature"`
+	TopP             int            `json:"top_p"`
+	N                int            `json:"n"`
+	Stream           bool           `json:"stream"`
+	Stop             string         `json:"stop"`
+	MaxTokens        int            `json:"max_tokens"`
+	PresencePenalty  int            `json:"presence_penalty"`
+	FrequencyPenalty int            `json:"frequency_penalty"`
+	LogitBias        map[string]int `json:"logit_bias"`
+	User             string         `json:"user"`
 }
 
-type responseBody struct {
+type SmallRequestBodyChat struct {
+	Model    string        `json:"model"`
+	Messages []MessageChat `json:"messages"`
+}
+
+type responseBodyChat struct {
 	ID      string `json:"id"`
 	Object  string `json:"object"`
 	Created int    `json:"created"`
@@ -50,48 +55,43 @@ type responseBody struct {
 
 var urlChat = "https://api.openai.com/v1/chat/completions"
 
-func ChatOpenAI(apiKey string) {
+func ChatOpenAI(apiKey string) (responseBodyChat, error) {
 
 	// gpt-4, gpt-4-0314, gpt-4-32k, gpt-4-32k-0314, gpt-3.5-turbo, gpt-3.5-turbo-0301
-	reqBody := RequestBodyChat{
+	reqBody := &SmallRequestBodyChat{
 		Model: "gpt-3.5-turbo",
 		Messages: []MessageChat{{
 			Role:    "user",
 			Content: "Hello!",
-			Name:    "Test",
+			Name:    "TestUser", //can use name of user
 		}},
 	}
 
-	log.Println("reqBody", reqBody)
+	reqBodyByte, _ := json.Marshal(reqBody)
 
-	requestBodyBytes, _ := json.Marshal(reqBody)
-	request, err := http.NewRequest("POST", urlChat, strings.NewReader(string(requestBodyBytes)))
-	if err != nil {
-		log.Println("Failed to create request", err)
-		return
-	}
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	r, err := http.NewRequest("POST", urlChat, bytes.NewBuffer(reqBodyByte))
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
 	client := &http.Client{}
-
-	response, err := client.Do(request)
+	res, err := client.Do(r)
 	if err != nil {
 		log.Println(err)
-		return
 	}
-	defer response.Body.Close()
 
-	log.Println(response.StatusCode)
+	defer res.Body.Close()
 
-	// read the response body
-	var respData map[string]interface{}
-	err = json.NewDecoder(response.Body).Decode(&respData)
-	if err != nil {
-		fmt.Println("Error decoding response data:", err)
-		return
+	response := responseBodyChat{}
+
+	derr := json.NewDecoder(res.Body).Decode(&response)
+	if derr != nil {
+		panic(derr)
 	}
-	// print the response data
-	fmt.Println(respData)
+
+	if res.StatusCode != http.StatusOK {
+		panic(res.StatusCode)
+	}
+
+	return response, nil
 
 }

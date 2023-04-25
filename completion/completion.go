@@ -1,128 +1,87 @@
 package completion
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 type RequestBodyCompletion struct {
-	Model       string      `json:"model"`
-	Prompt      string      `json:"prompt"`
-	MaxTokens   int         `json:"max_tokens"`
-	Temperature int         `json:"temperature"`
-	TopP        int         `json:"top_p"`
-	N           int         `json:"n"`
-	Stream      bool        `json:"stream"`
-	Logprobs    interface{} `json:"logprobs"`
-	Stop        string      `json:"stop"`
+	Model            string         `json:"model"`
+	Prompt           string         `json:"prompt"`
+	Suffix           string         `json:"suffix"`
+	MaxTokens        int            `json:"max_tokens"`
+	Temperature      int            `json:"temperature"`
+	TopP             int            `json:"top_p"`
+	N                int            `json:"n"`
+	Stream           bool           `json:"stream"`
+	Logprobs         interface{}    `json:"logprobs"`
+	Echo             bool           `json:"echo"`
+	Stop             string         `json:"stop"`
+	PresencePenalty  int            `json:"presence_penalty"`
+	FrequencyPenalty int            `json:"frequency_penalty"`
+	BestOf           int            `json:"best_of"`
+	LogitBias        map[string]int `json:"logit_bias"`
+	User             string         `json:"user"`
 }
 
-type OpenAIResponse struct {
+type SmallRequestBodyCompletion struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+}
+
+type responseBodyCompletion struct {
+	Id      string `json:"id"`
+	Object  string `json:"object"`
+	Created int    `json:"created"`
+	Model   string `json:"model"`
 	Choices []struct {
-		Text string `json:"text"`
+		Text         string      `json:"text"`
+		Index        int         `json:"index"`
+		Logprobs     interface{} `json:"logprobs"`
+		FinishReason string      `json:"finish_reason"`
 	} `json:"choices"`
 	Usage struct {
-		Prompt_tokens     int `json:"prompt_tokens"`
-		Completion_tokens int `json:"completion_tokens"`
-		Total_tokens      int `json:"total_tokens"`
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
-}
-
-type OpenAIRequest struct {
-	Prompt           string  `json:"prompt"`
-	Model            string  `json:"model"`
-	MaxTokens        int     `json:"max_tokens"`
-	Temperature      float64 `json:"temperature"`
-	FrequencyPenalty float64 `json:"frequency_penalty"`
-	PresencePenalty  float64 `json:"presence_penalty"`
 }
 
 var urlCompletion = "https://api.openai.com/v1/completions"
 
-func CompletionOpenAI(apiKey string) {
-	requestTest := OpenAIRequest{}
-	requestTest.Prompt = "test"
-	requestTest.Model = "text-davinci-002"
-	requestTest.MaxTokens = 100
-	requestTest.Temperature = 0.5
+func CompletionOpenAI(apiKey string) (responseBodyCompletion, error) {
+	requestBody := SmallRequestBodyCompletion{}
+	requestBody.Prompt = "test"
+	// text-davinci-003, text-davinci-002, text-curie-001, text-babbage-001, text-ada-001
+	requestBody.Model = "text-davinci-002"
 
-	requestBodyTest, _ := json.Marshal(requestTest)
+	reqBodyByte, _ := json.Marshal(requestBody)
 
-	requestBodyBytes, _ := json.Marshal(requestBodyTest)
-	request, err := http.NewRequest("POST", urlCompletion, strings.NewReader(string(requestBodyBytes)))
-	if err != nil {
-		//http.Error(w, "Failed to create request", http.StatusInternalServerError)
-		return
-	}
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	r, err := http.NewRequest("POST", urlCompletion, bytes.NewBuffer(reqBodyByte))
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
 	client := &http.Client{}
-
-	response, err := client.Do(request)
+	res, err := client.Do(r)
 	if err != nil {
-		//http.Error(w, "Failed to send request to OpenAI API", http.StatusInternalServerError)
-		return
-	}
-	defer response.Body.Close()
-
-	log.Println(response.StatusCode)
-
-	// Response processing
-	var openAIResponse OpenAIResponse
-	err = json.NewDecoder(response.Body).Decode(&openAIResponse)
-	if err != nil {
-		//http.Error(w, "Failed to parse response from OpenAI API", http.StatusInternalServerError)
-		return
+		log.Println(err)
 	}
 
-	log.Println(openAIResponse)
+	defer res.Body.Close()
 
-	//requestBody := RequestBodyCompletion{}
-	//requestBody.Prompt = "Say this is a test"
-	//requestBody.Model = "text-davinci-002"
-	//requestBody.MaxTokens = 7
-	//requestBody.Temperature = 0
-	//requestBody.TopP = 1
-	//requestBody.N = 1
-	//requestBody.Stream = false
-	//requestBody.Logprobs = "null"
-	//requestBody.Stop = "\n"
-	//
-	//requestBodyBytes, _ := json.Marshal(requestBody)
-	//request, err := http.NewRequest("POST", urlCompletion, strings.NewReader(string(requestBodyBytes)))
-	//if err != nil {
-	//	log.Println("Failed to create request", err)
-	//	return
-	//}
-	//request.Header.Add("Content-Type", "application/json")
-	//request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
-	//
-	//client := &http.Client{}
-	//
-	//response, err := client.Do(request)
-	//if err != nil {
-	//	log.Println("Failed to send request to OpenAI API", err)
-	//	return
-	//}
-	//log.Println(response.StatusCode)
-	//defer response.Body.Close()
-	//
-	//// Response processing
-	//var openAIResponse OpenAIResponse
-	//err = json.NewDecoder(response.Body).Decode(&openAIResponse)
-	//if err != nil {
-	//	log.Println("Failed to parse response from OpenAI API", err)
-	//	return
-	//}
-	//
-	////How many user used tokens
-	//numTokens := openAIResponse.Usage.Prompt_tokens
-	//log.Println(numTokens)
-	//
-	//log.Println(openAIResponse)
+	response := responseBodyCompletion{}
 
+	derr := json.NewDecoder(res.Body).Decode(&response)
+	if derr != nil {
+		panic(derr)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		panic(res.StatusCode)
+	}
+
+	return response, nil
 }
