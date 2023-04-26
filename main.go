@@ -3,8 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/Zmey56/openai-api-proxy/audio"
 	"github.com/Zmey56/openai-api-proxy/chat"
 	"github.com/Zmey56/openai-api-proxy/completion"
+	"github.com/Zmey56/openai-api-proxy/edit"
+	"github.com/Zmey56/openai-api-proxy/embeddings"
+	"github.com/Zmey56/openai-api-proxy/images"
 	"log"
 	"os"
 	"strings"
@@ -27,9 +31,9 @@ func main() {
 	flag.Parse()
 
 	apiKey := os.Getenv("API_KEY_OPENAI")
-	//if len(apiKey) < 1 {
-	//	log.Fatal("Not api key")
-	//}
+	if len(apiKey) < 1 {
+		log.Fatal("Not api key")
+	}
 
 	log.Println(selectedGoal)
 
@@ -44,12 +48,16 @@ func main() {
 		chat.ChatOpenAI(apiKey)
 	case "edits":
 		fmt.Println("edits")
+		edit.EditOpenAI(apiKey)
 	case "images":
 		fmt.Println("images")
+		images.ImageOpenAI(apiKey)
 	case "embeddings":
 		fmt.Println("embeddings")
+		embeddings.EmbenddingOpenAI(apiKey)
 	case "audio":
 		fmt.Println("audio")
+		audio.AudioOpenAI(apiKey)
 	case "files":
 		fmt.Println("files")
 	case "finetune":
