@@ -8,15 +8,17 @@ import (
 	"github.com/Zmey56/openai-api-proxy/completion"
 	"github.com/Zmey56/openai-api-proxy/edit"
 	"github.com/Zmey56/openai-api-proxy/embeddings"
+	"github.com/Zmey56/openai-api-proxy/files"
 	"github.com/Zmey56/openai-api-proxy/images"
+	"github.com/Zmey56/openai-api-proxy/models"
 	"log"
 	"os"
 	"strings"
 )
 
 var (
-	defaultGoal  = "chat"
-	allowedGoals = []string{"list", "completion", "chat", "edits",
+	defaultGoal  = "models"
+	allowedGoals = []string{"models", "list", "completion", "chat", "edits",
 		"images", "embeddings", "audio", "files", "finetune", "moderations"}
 	selectedGoal string
 )
@@ -35,11 +37,21 @@ func main() {
 		log.Fatal("Not api key")
 	}
 
-	log.Println(selectedGoal)
+	args := os.Args
+	log.Println("args", args[1])
 
 	switch selectedGoal {
-	case "list":
-		fmt.Println("LIST")
+	case "models":
+		fmt.Println("models")
+		if len(args) > 2 {
+			log.Println("FIND")
+			model, _ := models.RetriveModelOpenAI(apiKey, strings.TrimSpace(args[2]))
+			log.Println(model)
+		} else {
+			models, _ := models.ModelsOpenAI(apiKey)
+			models.FindModel("text-ada-001")
+			models.FindModel("text-zmey-001")
+		}
 	case "completion":
 		fmt.Println("completion")
 		completion.CompletionOpenAI(apiKey)
@@ -57,9 +69,11 @@ func main() {
 		embeddings.EmbenddingOpenAI(apiKey)
 	case "audio":
 		fmt.Println("audio")
-		audio.AudioOpenAI(apiKey)
+		audio.TranscriptionsOpenAI(apiKey)
 	case "files":
 		fmt.Println("files")
+		//files.FilesOpenAI(apiKey)
+		files.UploadOpenAI(apiKey)
 	case "finetune":
 		fmt.Println("finetune")
 	case "moderations":

@@ -4,3 +4,4 @@ test/
 .ipynb_checkpoints/
 *.db
 testusers.go
+test.*
