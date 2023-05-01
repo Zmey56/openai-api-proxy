@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -12,15 +11,9 @@ type RequestBodyEdit struct {
 	Model       string `json:"model"`
 	Input       string `json:"input"`
 	Instruction string `json:"instruction"`
-	N           string `json:"n"`
+	N           int    `json:"n"`
 	Temperature int    `json:"temperature"`
 	TopP        int    `json:"top_p"`
-}
-
-type SmallRequestBodyEdit struct {
-	Model       string `json:"model"`
-	Input       string `json:"input"`
-	Instruction string `json:"instruction"`
 }
 
 type responseBodyEdit struct {
@@ -37,19 +30,23 @@ type responseBodyEdit struct {
 	} `json:"usage"`
 }
 
+func NewRequestBodyEdit() RequestBodyEdit {
+	return RequestBodyEdit{
+		Model:       "text-davinci-edit-001",
+		Input:       "What day of the wek is it?",
+		Instruction: "Fix the spelling mistakes",
+		N:           1,
+		Temperature: 1,
+		TopP:        1,
+	}
+}
+
 var urlEdit = "https://api.openai.com/v1/edits"
 
-func EditOpenAI(apiKey string) (responseBodyEdit, error) {
+func EditOpenAI(apiKey string, req RequestBodyEdit) (responseBodyEdit, error) {
 	response := responseBodyEdit{}
 
-	requestBody := SmallRequestBodyEdit{}
-	//
-	requestBody.Input = "What day of the wek is it?"
-	requestBody.Instruction = "Fix the spelling mistakes"
-	// text-davinci-edit-001 or code-davinci-edit-001
-	requestBody.Model = "text-davinci-edit-001"
-
-	reqBodyByte, _ := json.Marshal(requestBody)
+	reqBodyByte, _ := json.Marshal(req)
 
 	r, err := http.NewRequest("POST", urlEdit, bytes.NewBuffer(reqBodyByte))
 	r.Header.Add("Content-Type", "application/json")
@@ -71,8 +68,6 @@ func EditOpenAI(apiKey string) (responseBodyEdit, error) {
 	if res.StatusCode != http.StatusOK {
 		return response, err
 	}
-
-	log.Println(response)
 
 	return response, nil
 }
