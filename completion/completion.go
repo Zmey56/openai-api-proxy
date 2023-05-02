@@ -9,27 +9,21 @@ import (
 )
 
 type RequestBodyCompletion struct {
-	Model            string         `json:"model"`
-	Prompt           string         `json:"prompt"`
-	Suffix           string         `json:"suffix"`
-	MaxTokens        int            `json:"max_tokens"`
-	Temperature      int            `json:"temperature"`
-	TopP             int            `json:"top_p"`
-	N                int            `json:"n"`
-	Stream           bool           `json:"stream"`
-	Logprobs         interface{}    `json:"logprobs"`
-	Echo             bool           `json:"echo"`
-	Stop             string         `json:"stop"`
-	PresencePenalty  int            `json:"presence_penalty"`
-	FrequencyPenalty int            `json:"frequency_penalty"`
-	BestOf           int            `json:"best_of"`
-	LogitBias        map[string]int `json:"logit_bias"`
-	User             string         `json:"user"`
-}
-
-type SmallRequestBodyCompletion struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
+	Model            string `json:"model"`
+	Prompt           string `json:"prompt"`
+	Suffix           string `json:"suffix"`
+	MaxTokens        int    `json:"max_tokens"`
+	Temperature      int    `json:"temperature"`
+	TopP             int    `json:"top_p"`
+	N                int    `json:"n"`
+	Stream           bool   `json:"stream"`
+	Logprobs         int    `json:"logprobs"`
+	Echo             bool   `json:"echo"`
+	Stop             string `json:"stop"`
+	PresencePenalty  int    `json:"presence_penalty"`
+	FrequencyPenalty int    `json:"frequency_penalty"`
+	BestOf           int    `json:"best_of"`
+	User             string `json:"user"`
 }
 
 type responseBodyCompletion struct {
@@ -50,15 +44,31 @@ type responseBodyCompletion struct {
 	} `json:"usage"`
 }
 
+func NewRequestBodyCompletion() RequestBodyCompletion {
+	return RequestBodyCompletion{
+		Model:            "text-davinci-003",
+		Prompt:           "Say this is a test",
+		Suffix:           "null",
+		MaxTokens:        16,
+		Temperature:      1,
+		TopP:             1,
+		N:                1,
+		Stream:           false,
+		Logprobs:         0,
+		Echo:             false,
+		Stop:             "null",
+		PresencePenalty:  0,
+		FrequencyPenalty: 0,
+		BestOf:           1,
+		User:             "",
+	}
+}
+
 var urlCompletion = "https://api.openai.com/v1/completions"
 
-func CompletionOpenAI(apiKey string) (responseBodyCompletion, error) {
-	requestBody := SmallRequestBodyCompletion{}
-	requestBody.Prompt = "test"
-	// text-davinci-003, text-davinci-002, text-curie-001, text-babbage-001, text-ada-001
-	requestBody.Model = "text-davinci-002"
+func CompletionOpenAI(apiKey string, req RequestBodyCompletion) (responseBodyCompletion, error) {
 
-	reqBodyByte, _ := json.Marshal(requestBody)
+	reqBodyByte, _ := json.Marshal(req)
 
 	r, err := http.NewRequest("POST", urlCompletion, bytes.NewBuffer(reqBodyByte))
 	r.Header.Add("Content-Type", "application/json")

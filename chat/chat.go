@@ -14,26 +14,22 @@ type MessageChat struct {
 	Name    string `json:"name"`
 }
 
+// RequestBodyChat remove LogitBias from request
 type RequestBodyChat struct {
-	Model            string         `json:"model"`
-	Messages         []MessageChat  `json:"messages"`
-	Temperature      int            `json:"temperature"`
-	TopP             int            `json:"top_p"`
-	N                int            `json:"n"`
-	Stream           bool           `json:"stream"`
-	Stop             string         `json:"stop"`
-	MaxTokens        int            `json:"max_tokens"`
-	PresencePenalty  int            `json:"presence_penalty"`
-	FrequencyPenalty int            `json:"frequency_penalty"`
-	LogitBias        map[string]int `json:"logit_bias"`
-	User             string         `json:"user"`
+	Model            string        `json:"model"`
+	Messages         []MessageChat `json:"messages"`
+	Temperature      int           `json:"temperature"`
+	TopP             int           `json:"top_p"`
+	N                int           `json:"n"`
+	Stream           bool          `json:"stream"`
+	Stop             string        `json:"stop"`
+	MaxTokens        int           `json:"max_tokens"`
+	PresencePenalty  int           `json:"presence_penalty"`
+	FrequencyPenalty int           `json:"frequency_penalty"`
+	User             string        `json:"user"`
 }
 
-type SmallRequestBodyChat struct {
-	Model    string        `json:"model"`
-	Messages []MessageChat `json:"messages"`
-}
-
+// responseBodyChat for request
 type responseBodyChat struct {
 	ID      string `json:"id"`
 	Object  string `json:"object"`
@@ -53,21 +49,33 @@ type responseBodyChat struct {
 	} `json:"usage"`
 }
 
+// NewRequestBodyChart constructor for RequestBodyChat
+func NewRequestBodyChart() RequestBodyChat {
+	msg := MessageChat{
+		Role:    "user",
+		Content: "Hello!",
+		Name:    "Alex",
+	}
+	return RequestBodyChat{
+		Model:            "gpt-3.5-turbo-0301",
+		Messages:         []MessageChat{msg},
+		Temperature:      1,
+		TopP:             1,
+		N:                1,
+		Stream:           false,
+		Stop:             "null",
+		MaxTokens:        4000,
+		PresencePenalty:  0,
+		FrequencyPenalty: 0,
+		User:             "",
+	}
+}
+
 var urlChat = "https://api.openai.com/v1/chat/completions"
 
-func ChatOpenAI(apiKey string) (responseBodyChat, error) {
+func ChatOpenAI(apiKey string, req RequestBodyChat) (responseBodyChat, error) {
 
-	// gpt-4, gpt-4-0314, gpt-4-32k, gpt-4-32k-0314, gpt-3.5-turbo, gpt-3.5-turbo-0301
-	reqBody := &SmallRequestBodyChat{
-		Model: "gpt-3.5-turbo",
-		Messages: []MessageChat{{
-			Role:    "user",
-			Content: "Hello!",
-			Name:    "TestUser", //can use name of user
-		}},
-	}
-
-	reqBodyByte, _ := json.Marshal(reqBody)
+	reqBodyByte, _ := json.Marshal(req)
 
 	r, err := http.NewRequest("POST", urlChat, bytes.NewBuffer(reqBodyByte))
 	r.Header.Add("Content-Type", "application/json")
