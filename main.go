@@ -6,61 +6,63 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
+	"net/url"
 	"os"
 )
 
-var urlChat = "https://api.openai.com/v1/chat/completions"
+type responseBodyChat struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int    `json:"created"`
+	Choices []struct {
+		Index   int `json:"index"`
+		Message struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		} `json:"message"`
+		FinishReason string `json:"finish_reason"`
+	} `json:"choices"`
+	Usage struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+	} `json:"usage"`
+}
 
 func main() {
-	http.HandleFunc("/", handlerProxy)
+	apiKey := os.Getenv("API_KEY_OPENAI")
+
+	remote, err := url.Parse("https://api.openai.com")
+	if err != nil {
+		panic(err)
+	}
+
+	handler := func(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			log.Println("r.URL", r.URL)
+			r.Host = remote.Host
+			r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+			w.Header().Set("X-Ben", "Rad")
+			buffer := bytes.NewBuffer([]byte{})
+			writer := httptest.NewRecorder()
+			p.ServeHTTP(writer, r)
+			response := responseBodyChat{}
+			derr := json.NewDecoder(writer.Body).Decode(&response)
+			if derr != nil {
+				panic(derr)
+			}
+			buffer.Write([]byte(response.Choices[0].Message.Content))
+			w.Write(buffer.Bytes())
+		}
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+
+	http.HandleFunc("/", handler(proxy))
+
 	if err := http.ListenAndServe(":4000", nil); err != nil {
 		panic(err)
 	}
-}
-
-func handlerProxy(w http.ResponseWriter, r *http.Request) {
-	//fmt.Println(r.URL.Host)
-	//if strings.HasPrefix(r.URL.String(), "/api") {
-	//	//Check password
-	//}
-	//
-	//url, err := url.Parse(fmt.Sprintf("http://%s/", urlChat))
-	//if err != nil {
-	//	log.Println(err)
-	//	return
-	//}
-	//proxy := httputil.NewSingleHostReverseProxy(url)
-
-	fmt.Println(r.URL.Host)
-	apiKey := os.Getenv("API_KEY_OPENAI")
-
-	if len(apiKey) < 1 {
-		log.Println("You have problem with ApiKey")
-	}
-
-	data := map[string]interface{}{
-		"model":  "gpt-3.5-turbo",
-		"prompt": "Hello, world!",
-	}
-
-	body, err := json.Marshal(data)
-	if err != nil {
-		panic(err)
-	}
-	req, err := http.NewRequest("POST", urlChat, bytes.NewBuffer(body))
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	log.Println("resp", resp)
-	if err != nil {
-		log.Println(err)
-	}
-	defer resp.Body.Close()
-
-	//proxy.ServeHTTP(w, r)
 }

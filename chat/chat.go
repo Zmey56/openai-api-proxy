@@ -81,11 +81,14 @@ func ChatOpenAI(apiKey string, req RequestBodyChat) (responseBodyChat, error) {
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
+	log.Println("Request", r)
 	client := &http.Client{}
 	res, err := client.Do(r)
 	if err != nil {
 		log.Println(err)
 	}
+
+	log.Println("Response", res)
 
 	defer res.Body.Close()
 
