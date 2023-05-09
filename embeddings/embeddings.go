@@ -14,7 +14,7 @@ type RequestBodyEmbeddings struct {
 	User  string `json:"user"`
 }
 
-type responseBodyEmbeddings struct {
+type ResponseBodyEmbeddings struct {
 	Object string `json:"object"`
 	Data   []struct {
 		Object    string    `json:"object"`
@@ -28,10 +28,18 @@ type responseBodyEmbeddings struct {
 	} `json:"usage"`
 }
 
+func NewRequestBodyEmbeddings() RequestBodyEmbeddings {
+	return RequestBodyEmbeddings{
+		Model: "text-embedding-ada-002",
+		Input: "The food was delicious and the waiter...",
+		User:  "test",
+	}
+}
+
 var urlEmbendding = "https://api.openai.com/v1/embeddings"
 
-func EmbenddingOpenAI(apiKey string) (responseBodyEmbeddings, error) {
-	response := responseBodyEmbeddings{}
+func EmbenddingOpenAI(apiKey string) (ResponseBodyEmbeddings, error) {
+	response := ResponseBodyEmbeddings{}
 
 	requestBody := RequestBodyEmbeddings{}
 	//

@@ -1,13 +1,5 @@
 package images
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-)
-
 type RequestBodyImage struct {
 	Prompt         string `json:"prompt"`
 	N              int    `json:"n"`
@@ -16,54 +8,59 @@ type RequestBodyImage struct {
 	User           string `json:"user"`
 }
 
-type SmallRequestBodyImage struct {
-	Prompt string `json:"prompt"`
-	N      int    `json:"n"`
-	Size   string `json:"size"`
+type RequestBodyImageEdit struct {
+	Image          string `json:"image"`
+	Mask           string `json:"mask"`
+	Prompt         string `json:"prompt"`
+	N              int    `json:"n"`
+	Size           string `json:"size"`
+	ResponseFormat string `json:"response_format"`
+	User           string `json:"user"`
 }
 
-type responseBodyImage struct {
+type RequestBodyImageVariation struct {
+	Image          string `json:"image"`
+	N              int    `json:"n"`
+	Size           string `json:"size"`
+	ResponseFormat string `json:"response_format"`
+	User           string `json:"user"`
+}
+
+type ResponseBodyImage struct {
 	Created int `json:"created"`
 	Data    []struct {
 		Url string `json:"url"`
 	} `json:"data"`
 }
 
-var urlImage = "https://api.openai.com/v1/images/generations"
-
-func ImageOpenAI(apiKey string) (responseBodyImage, error) {
-	response := responseBodyImage{}
-
-	requestBody := SmallRequestBodyImage{}
-	//
-	requestBody.Prompt = "Zmey56, Golang, Python Developer, Data Analytics, Quantitative Analyst, Data Science, BI Analyst, Blockchain, Cryptocurrency"
-	requestBody.N = 2
-	requestBody.Size = "1024x1024"
-
-	reqBodyByte, _ := json.Marshal(requestBody)
-
-	r, err := http.NewRequest("POST", urlImage, bytes.NewBuffer(reqBodyByte))
-	r.Header.Add("Content-Type", "application/json")
-	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
-
-	client := &http.Client{}
-	res, err := client.Do(r)
-	if err != nil {
-		return response, err
+func NewRequestBodyImage() RequestBodyImage {
+	return RequestBodyImage{
+		Prompt:         "A cute baby sea otter",
+		N:              2,
+		Size:           "1024x1024",
+		ResponseFormat: "url",
+		User:           "test",
 	}
+}
 
-	defer res.Body.Close()
-
-	derr := json.NewDecoder(res.Body).Decode(&response)
-	if derr != nil {
-		return response, err
+func NewRequestBodyImageEdit() RequestBodyImageEdit {
+	return RequestBodyImageEdit{
+		Image:          "@otter.png",
+		Mask:           "@mask.png",
+		Prompt:         "A cute baby sea otter",
+		N:              2,
+		Size:           "1024x1024",
+		ResponseFormat: "url",
+		User:           "test",
 	}
+}
 
-	if res.StatusCode != http.StatusOK {
-		return response, err
+func NewRequestBodyImageVriation() RequestBodyImageVariation {
+	return RequestBodyImageVariation{
+		Image:          "@otter.png",
+		N:              2,
+		Size:           "1024x1024",
+		ResponseFormat: "url",
+		User:           "test",
 	}
-
-	log.Println(response)
-
-	return response, nil
 }

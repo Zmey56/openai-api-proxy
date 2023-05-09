@@ -12,22 +12,51 @@ import (
 )
 
 type RequestBodyAudio struct {
-	File           string `json:"file"`
-	Model          string `json:"model"`
-	Prompt         string `json:"prompt"`
-	ResponseFormat string `json:"response_format"`
-	Temperature    int    `json:"temperature"`
-	Language       string `json:"language"`
+	File           string  `json:"file"`
+	Model          string  `json:"model"`
+	Prompt         string  `json:"prompt"`
+	ResponseFormat string  `json:"response_format"`
+	Temperature    float64 `json:"temperature"`
+	Language       string  `json:"language"`
 }
 
-type responseBodyAudio struct {
+type RequestBodyAudioTranslation struct {
+	File           string  `json:"file"`
+	Model          string  `json:"model"`
+	Prompt         string  `json:"prompt"`
+	ResponseFormat string  `json:"response_format"`
+	Temperature    float64 `json:"temperature"`
+}
+
+type ResponseBodyAudio struct {
 	Text string `json:"text"`
+}
+
+func NewRequestBodyAudio() RequestBodyAudio {
+	return RequestBodyAudio{
+		File:           "audio.mp3",
+		Model:          "whisper-1",
+		Prompt:         "Audio",
+		ResponseFormat: "json",
+		Temperature:    0,
+		Language:       "en",
+	}
+}
+
+func NewRequestBodyAudioTranslation() RequestBodyAudioTranslation {
+	return RequestBodyAudioTranslation{
+		File:           "audio.mp3",
+		Model:          "whisper-1",
+		Prompt:         "Audio",
+		ResponseFormat: "json",
+		Temperature:    0,
+	}
 }
 
 var urlAudio = "https://api.openai.com/v1/audio/transcriptions"
 
-func TranscriptionsOpenAI(apiKey string) (responseBodyAudio, error) {
-	resBA := responseBodyAudio{}
+func TranscriptionsOpenAI(apiKey string) (ResponseBodyAudio, error) {
+	resBA := ResponseBodyAudio{}
 	//
 	//requestBody := RequestBodyAudio{}
 

@@ -26,7 +26,7 @@ type RequestBodyCompletion struct {
 	User             string `json:"user"`
 }
 
-type responseBodyCompletion struct {
+type ResponseBodyCompletion struct {
 	Id      string `json:"id"`
 	Object  string `json:"object"`
 	Created int    `json:"created"`
@@ -66,7 +66,7 @@ func NewRequestBodyCompletion() RequestBodyCompletion {
 
 var urlCompletion = "https://api.openai.com/v1/completions"
 
-func CompletionOpenAI(apiKey string, req RequestBodyCompletion) (responseBodyCompletion, error) {
+func CompletionOpenAI(apiKey string, req RequestBodyCompletion) (ResponseBodyCompletion, error) {
 
 	reqBodyByte, _ := json.Marshal(req)
 
@@ -82,7 +82,7 @@ func CompletionOpenAI(apiKey string, req RequestBodyCompletion) (responseBodyCom
 
 	defer res.Body.Close()
 
-	response := responseBodyCompletion{}
+	response := ResponseBodyCompletion{}
 
 	derr := json.NewDecoder(res.Body).Decode(&response)
 	if derr != nil {

@@ -16,7 +16,7 @@ type RequestBodyEdit struct {
 	TopP        int    `json:"top_p"`
 }
 
-type responseBodyEdit struct {
+type ResponseBodyEdit struct {
 	Object  string `json:"object"`
 	Created int    `json:"created"`
 	Choices []struct {
@@ -43,8 +43,8 @@ func NewRequestBodyEdit() RequestBodyEdit {
 
 var urlEdit = "https://api.openai.com/v1/edits"
 
-func EditOpenAI(apiKey string, req RequestBodyEdit) (responseBodyEdit, error) {
-	response := responseBodyEdit{}
+func EditOpenAI(apiKey string, req RequestBodyEdit) (ResponseBodyEdit, error) {
+	response := ResponseBodyEdit{}
 
 	reqBodyByte, _ := json.Marshal(req)
 

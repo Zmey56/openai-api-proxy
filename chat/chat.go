@@ -30,7 +30,7 @@ type RequestBodyChat struct {
 }
 
 // responseBodyChat for request
-type responseBodyChat struct {
+type ResponseBodyChat struct {
 	ID      string `json:"id"`
 	Object  string `json:"object"`
 	Created int    `json:"created"`
@@ -73,7 +73,7 @@ func NewRequestBodyChart() RequestBodyChat {
 
 var urlChat = "https://api.openai.com/v1/chat/completions"
 
-func ChatOpenAI(apiKey string, req RequestBodyChat) (responseBodyChat, error) {
+func ChatOpenAI(apiKey string, req RequestBodyChat) (ResponseBodyChat, error) {
 
 	reqBodyByte, _ := json.Marshal(req)
 
@@ -92,7 +92,7 @@ func ChatOpenAI(apiKey string, req RequestBodyChat) (responseBodyChat, error) {
 
 	defer res.Body.Close()
 
-	response := responseBodyChat{}
+	response := ResponseBodyChat{}
 
 	derr := json.NewDecoder(res.Body).Decode(&response)
 	if derr != nil {
