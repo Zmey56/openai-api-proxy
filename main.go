@@ -20,9 +20,7 @@ import (
 )
 
 type OpenAIRequest struct {
-	Goal   string `json:"goal"`
 	Prompt string `json:"prompt"`
-	Model  string `json:"model"`
 }
 
 func main() {
@@ -37,17 +35,40 @@ func main() {
 	handler := func(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {
 			r.Host = remote.Host
+			r.Header.Add("Content-Type", "application/json")
 			r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+
+			prompt := make(map[string]interface{})
+
+			//prompt := OpenAIRequest{}
+			//_ = json.NewDecoder(r.Body).Decode(&prompt)
+			//if err != nil {
+			//	panic(err)
+			//}
+			//log.Println("TESST", prompt)
+			err = json.NewDecoder(r.Body).Decode(&prompt)
+			if err != nil {
+				panic(err)
+			}
+			log.Println(prompt)
+			//reqBody := SwitchRequest(r.URL.String(), prompt)
+			//log.Println(reqBody)
+			//
+			//reqBodyBytes, _ := json.Marshal(reqBody)
+			//r.ContentLength = int64(len(reqBodyBytes))
+			//r.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
+
 			w.Header().Set("X-Ben", "Rad")
 			buffer := bytes.NewBuffer([]byte{})
 			writer := httptest.NewRecorder()
 			p.ServeHTTP(writer, r)
+			log.Println(writer)
 			response := make(map[string]interface{})
-			derr := json.NewDecoder(writer.Body).Decode(&response)
-			if derr != nil {
-				panic(derr)
+			err = json.NewDecoder(writer.Body).Decode(&response)
+			if err != nil {
+				panic(err)
 			}
-			result := SwitchResponse(r.URL.String(), response)
+			////result := SwitchResponse(r.URL.String(), response)
 			jsonByte, _ := json.Marshal(response)
 			buffer.Write(jsonByte)
 			w.Write(buffer.Bytes())
@@ -63,18 +84,14 @@ func main() {
 	}
 }
 
-func SwitchRequest(url string, param map[string]string) interface{} {
+func SwitchRequest(url string, prompt OpenAIRequest) interface{} {
 	urlArr := strings.Join(strings.Split(url, "/"), "")
 	switch urlArr {
 	case "v1completions":
 		log.Println("v1/completions")
 		reqComp := completion.NewRequestBodyCompletion()
-		if param["model"] != "" {
-			reqComp.Model = param["model"]
-		}
-
-		if param["prompt"] != "" {
-			reqComp.Prompt = param["prompt"]
+		if prompt.Prompt != "" {
+			reqComp.Prompt = prompt.Prompt
 		}
 		return reqComp
 	case "v1chatcompletions":
