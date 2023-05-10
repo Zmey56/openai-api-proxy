@@ -1,162 +1,116 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	"flag"
 	"fmt"
-	"github.com/Zmey56/openai-api-proxy/audio"
-	"github.com/Zmey56/openai-api-proxy/chat"
-	"github.com/Zmey56/openai-api-proxy/completion"
-	"github.com/Zmey56/openai-api-proxy/edit"
-	"github.com/Zmey56/openai-api-proxy/embeddings"
-	"github.com/Zmey56/openai-api-proxy/images"
-	"log"
+	"github.com/Zmey56/openai-api-proxy/authorization"
+	"github.com/Zmey56/openai-api-proxy/log"
+	"github.com/Zmey56/openai-api-proxy/server/middlewares"
+	"github.com/Zmey56/openai-api-proxy/server/proxy"
 	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
-	"net/url"
 	"os"
-	"strings"
 )
 
-type OpenAIRequest struct {
-	Prompt string `json:"prompt"`
+var (
+	logLevel = flag.String("log-level", "info", "the level of logging (debug, info, warning, error)")
+
+	serverCmd     = flag.NewFlagSet("server", flag.ExitOnError)
+	openaiToken   = serverCmd.String("openai-token", os.Getenv("OPENAI_TOKEN"), "the token used to communicate with OpenAI API")
+	openaiAddress = serverCmd.String("openai-address", "https://api.openai.com", "the address of the OpenAI API")
+	serverAddress = serverCmd.String("local-addr", "localhost:8080", "the binding for the server (host and port)")
+	serverDBLoc   = serverCmd.String("db", "db.sqlite3", "the location of the database")
+
+	initdbCmd   = flag.NewFlagSet("initdb", flag.ExitOnError)
+	initdbDBLoc = initdbCmd.String("db", "db.sqlite3", "the location of the database")
+)
+
+func printUsage() {
+	fmt.Printf("Usage: %s <command> [options]\n\n", os.Args[0])
+	fmt.Println("Commands:")
+	fmt.Println("  server   start server with specified options")
+	fmt.Println("  initdb   initialize the database")
+	fmt.Println("  help     prints usage info")
+	fmt.Println()
+
+	flag.PrintDefaults()
+	fmt.Println()
+
+	fmt.Println("Server command flags:")
+	serverCmd.PrintDefaults()
+	fmt.Println()
+
+	fmt.Println("InitDB command flags:")
+	initdbCmd.PrintDefaults()
+	fmt.Println()
 }
 
 func main() {
+	flag.Parse()
 
-	apiKey := os.Getenv("API_KEY_OPENAI")
-
-	remote, err := url.Parse("https://api.openai.com")
+	err := log.SetLevel(*logLevel)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Failed to set log level: %s\n", err)
+		printUsage()
+		os.Exit(1)
 	}
 
-	handler := func(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			r.Host = remote.Host
-			r.Header.Add("Content-Type", "application/json")
-			r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	args := flag.Args()
+	if len(args) < 1 {
+		printUsage()
+		os.Exit(1)
+	}
 
-			prompt := make(map[string]interface{})
+	cmd := args[0]
 
-			//prompt := OpenAIRequest{}
-			//_ = json.NewDecoder(r.Body).Decode(&prompt)
-			//if err != nil {
-			//	panic(err)
-			//}
-			//log.Println("TESST", prompt)
-			err = json.NewDecoder(r.Body).Decode(&prompt)
-			if err != nil {
-				panic(err)
-			}
-			log.Println(prompt)
-			//reqBody := SwitchRequest(r.URL.String(), prompt)
-			//log.Println(reqBody)
-			//
-			//reqBodyBytes, _ := json.Marshal(reqBody)
-			//r.ContentLength = int64(len(reqBodyBytes))
-			//r.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
-
-			w.Header().Set("X-Ben", "Rad")
-			buffer := bytes.NewBuffer([]byte{})
-			writer := httptest.NewRecorder()
-			p.ServeHTTP(writer, r)
-			log.Println(writer)
-			response := make(map[string]interface{})
-			err = json.NewDecoder(writer.Body).Decode(&response)
-			if err != nil {
-				panic(err)
-			}
-			////result := SwitchResponse(r.URL.String(), response)
-			jsonByte, _ := json.Marshal(response)
-			buffer.Write(jsonByte)
-			w.Write(buffer.Bytes())
+	switch cmd {
+	case "server":
+		if err := serverCmd.Parse(args[1:]); err != nil {
+			log.Error.Print(err)
+			printUsage()
+			os.Exit(1)
 		}
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(remote)
-
-	http.HandleFunc("/", handler(proxy))
-
-	if err := http.ListenAndServe(":4000", nil); err != nil {
-		panic(err)
+		if err := runServer(); err != nil {
+			log.Error.Fatal(err)
+		}
+	case "initdb":
+		if err := initdbCmd.Parse(args[1:]); err != nil {
+			log.Error.Print(err)
+			printUsage()
+			os.Exit(1)
+		}
+		runInitDb()
+	case "help":
+		printUsage()
+	default:
+		fmt.Printf("Unknown command: %s\n", cmd)
+		printUsage()
+		os.Exit(1)
 	}
 }
 
-func SwitchRequest(url string, prompt OpenAIRequest) interface{} {
-	urlArr := strings.Join(strings.Split(url, "/"), "")
-	switch urlArr {
-	case "v1completions":
-		log.Println("v1/completions")
-		reqComp := completion.NewRequestBodyCompletion()
-		if prompt.Prompt != "" {
-			reqComp.Prompt = prompt.Prompt
-		}
-		return reqComp
-	case "v1chatcompletions":
-		log.Println("v1/chat/completions")
-		return chat.NewRequestBodyChart()
-	case "v1edits":
-		log.Println("v1/edits")
-		return edit.NewRequestBodyEdit()
-	case "v1imagesgenerations":
-		log.Println("v1/images/generations")
-		return images.NewRequestBodyImage()
-	case "v1imagesedits":
-		log.Println("v1/images/edits")
-		return images.NewRequestBodyImageEdit()
-	case "v1imagesvariations":
-		log.Println("v1/images/variations")
-		return images.NewRequestBodyImageVriation()
-	case "v1embeddings":
-		log.Println("v1/embeddings")
-		return embeddings.NewRequestBodyEmbeddings()
-	case "v1audiotranscriptions":
-		log.Println("v1/audio/transcriptions")
-		return audio.NewRequestBodyAudio()
-	case "v1audiotranslations":
-		log.Println("v1/audio/translations")
-		return audio.NewRequestBodyAudioTranslation()
-	default:
-		log.Println("the method is not defined")
-		return nil
+func runServer() error {
+	mux := http.NewServeMux()
+
+	proxyInst, err := proxy.NewProxy(proxy.Configuration{
+		OpenaiToken:   *openaiToken,
+		OpenaiAddress: *openaiAddress,
+	})
+	if err != nil {
+		return err
 	}
+
+	authService := authorization.StaticService{}
+
+	mux.Handle("/openai/",
+		middlewares.RemovePathPrefixMiddleware(
+			middlewares.AuthorizationMiddleware(proxyInst, authService),
+			"/openai/",
+		),
+	)
+
+	return http.ListenAndServe(*serverAddress, mux)
 }
 
-func SwitchResponse(url string, resp map[string]interface{}) interface{} {
-	urlArr := strings.Join(strings.Split(url, "/"), "")
-	//result := make(map[string]string)
-	switch urlArr {
-	case "v1completions":
-		log.Println("v1/completions")
-		return completion.ResponseBodyCompletion{}
-	case "v1chatcompletions":
-		log.Println("v1/chat/completions")
-		return chat.ResponseBodyChat{}
-	case "v1edits":
-		log.Println("v1/edits")
-		return edit.ResponseBodyEdit{}
-	case "v1imagesgenerations":
-		log.Println("v1/images/generations")
-		return images.ResponseBodyImage{}
-	case "v1imagesedits":
-		log.Println("v1/images/edits")
-		return images.ResponseBodyImage{}
-	case "v1imagesvariations":
-		log.Println("v1/images/variations")
-		return images.ResponseBodyImage{}
-	case "v1embeddings":
-		log.Println("v1/embeddings")
-		return embeddings.ResponseBodyEmbeddings{}
-	case "v1audiotranscriptions":
-		log.Println("v1/audio/transcriptions")
-		return audio.ResponseBodyAudio{}
-	case "v1audiotranslations":
-		log.Println("v1/audio/translations")
-		return audio.ResponseBodyAudio{}
-	default:
-		log.Println("the method is not defined")
-		return nil
-	}
+func runInitDb() {
+	// TODO: when we will have a database
 }
