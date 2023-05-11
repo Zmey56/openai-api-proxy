@@ -80,6 +80,10 @@ func (s *Proxy) rewrite(request *httputil.ProxyRequest) {
 		return
 	}
 
+	if request.In.Body == nil || request.In.ContentLength == 0 {
+		return
+	}
+
 	//In case if body has JSON, we will inject user in the body
 	user := request.In.Header.Get("openai-api-proxy-user")
 
