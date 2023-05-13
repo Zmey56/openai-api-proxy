@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
 	"github.com/Zmey56/openai-api-proxy/log"
+	"github.com/Zmey56/openai-api-proxy/repository"
 	"github.com/Zmey56/openai-api-proxy/server/middlewares"
 	"github.com/Zmey56/openai-api-proxy/server/proxy"
+	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
@@ -21,7 +26,7 @@ var (
 	serverDBLoc   = serverCmd.String("db", "db.sqlite3", "the location of the database")
 
 	initdbCmd   = flag.NewFlagSet("initdb", flag.ExitOnError)
-	initdbDBLoc = initdbCmd.String("db", "db.sqlite3", "the location of the database")
+	initdbDBLoc = initdbCmd.String("db", "openaiapiproxi.db", "the location of the database")
 )
 
 func printUsage() {
@@ -78,7 +83,9 @@ func main() {
 			printUsage()
 			os.Exit(1)
 		}
-		runInitDb()
+		if err := runInitDb(); err != nil {
+			log.Error.Fatal(err)
+		}
 	case "help":
 		printUsage()
 	default:
@@ -101,6 +108,9 @@ func runServer() error {
 
 	authService := authorization.StaticService{}
 
+	fmt.Println("proxyInst", proxyInst)
+	fmt.Println("authService", authService)
+
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
 			middlewares.AuthorizationMiddleware(proxyInst, authService),
@@ -111,6 +121,55 @@ func runServer() error {
 	return http.ListenAndServe(*serverAddress, mux)
 }
 
-func runInitDb() {
-	// TODO: when we will have a database
+func runInitDb() error {
+	if checkDBExist(*initdbDBLoc) {
+		buf := bufio.NewReader(os.Stdout)
+		fmt.Println("Do you want to create new DB and remove old? Yes or No")
+		read, err := buf.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		if strings.ToLower(strings.TrimSpace(read)) == "yes" {
+			f, err := os.Create(*initdbDBLoc)
+			if err != nil {
+				return err
+			}
+			f.Close()
+			fmt.Println("Database in file ", initdbDBLoc, " created!")
+
+			if err != nil {
+				return err
+			}
+
+			repository.CreatedTableUsers()
+			repository.AddTestUsers()
+
+			return nil
+
+		} else {
+			fmt.Println("Data Base exist")
+			return nil
+		}
+	} else {
+		// TO DO create new DB
+		f, err := os.Create(*initdbDBLoc)
+		if err != nil {
+			return err
+		}
+		f.Close()
+		fmt.Println("Database in file ", initdbDBLoc, " created!")
+
+		if err != nil {
+			return err
+		}
+
+		repository.CreatedTableUsers()
+		repository.AddTestUsers()
+		return nil
+	}
+}
+
+func checkDBExist(filepath string) bool {
+	_, err := os.Stat(filepath)
+	return !errors.Is(err, os.ErrNotExist)
 }

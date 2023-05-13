@@ -1,6 +1,8 @@
 package middlewares
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // RemovePathPrefixMiddleware Removes the prefix from the request path
 func RemovePathPrefixMiddleware(next http.Handler, prefix string) http.Handler {

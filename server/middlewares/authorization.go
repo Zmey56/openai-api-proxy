@@ -3,6 +3,7 @@ package middlewares
 import (
 	"github.com/Zmey56/openai-api-proxy/authorization"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -12,6 +13,7 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// trying to identify the user
 		user, err := service.Verify(r.Header.Get("Authorization"))
+		log.Println("test user", user)
 		if err != nil {
 			_, _ = io.Copy(io.Discard, r.Body)
 			_ = r.Body.Close()
