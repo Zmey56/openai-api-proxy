@@ -151,7 +151,6 @@ func runInitDb() error {
 			return nil
 		}
 	} else {
-		// TO DO create new DB
 		f, err := os.Create(*initdbDBLoc)
 		if err != nil {
 			return err

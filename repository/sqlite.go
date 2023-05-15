@@ -31,11 +31,15 @@ func CreatedTableUsers() {
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY,
-                        first_name TEXT NOT NULL UNIQUE,
+                        login NOT NULL UNIQUE,
+                        first_name TEXT NOT NULL,
                         last_name TEXT NOT NULL,
                         hashed_password TEXT NOT NULL,
                         email TEXT NOT NULL UNIQUE,
 					 	access_level INT NOT NULL,
+					 	amount_money REAL NOT NULL,
+					 	tokens INT NOT NULL,
+					 	auth_token TEXT,  
 					 	created_at DATETIME NOT NULL,
 					 	updated_at DATETIME NOT NULL
                     )`)
@@ -45,5 +49,9 @@ func CreatedTableUsers() {
 	}
 
 	log.Println("Table for users have created!!!")
+
+}
+
+func FindUser() {
 
 }

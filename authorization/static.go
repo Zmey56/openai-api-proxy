@@ -8,6 +8,8 @@ type StaticService struct {
 }
 
 func (s StaticService) Verify(token string) (string, error) {
+	// TO DO connect to DB and get auth token
+
 	if token == "test" {
 		return "test", nil
 	}
