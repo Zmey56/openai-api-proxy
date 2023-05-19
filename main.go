@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bufio"
-	"errors"
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -13,7 +12,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"os"
-	"strings"
 )
 
 var (
@@ -23,10 +21,11 @@ var (
 	openaiToken   = serverCmd.String("openai-token", os.Getenv("OPENAI_TOKEN"), "the token used to communicate with OpenAI API")
 	openaiAddress = serverCmd.String("openai-address", "https://api.openai.com", "the address of the OpenAI API")
 	serverAddress = serverCmd.String("local-addr", "localhost:8080", "the binding for the server (host and port)")
-	serverDBLoc   = serverCmd.String("db", "db.sqlite3", "the location of the database")
+	serverDBLoc   = serverCmd.String("db-location", "db.sqlite3", "the location of the database")
 
-	initdbCmd   = flag.NewFlagSet("initdb", flag.ExitOnError)
-	initdbDBLoc = initdbCmd.String("db", "openaiapiproxi.db", "the location of the database")
+	initdbCmd    = flag.NewFlagSet("initdb", flag.ExitOnError)
+	initdbDBLoc  = initdbCmd.String("db-location", "db.sqlite3", "the location of the database")
+	addTestUsers = initdbCmd.Bool("add-test-users", false, "add test users to the database")
 )
 
 func printUsage() {
@@ -122,53 +121,27 @@ func runServer() error {
 }
 
 func runInitDb() error {
-	if checkDBExist(*initdbDBLoc) {
-		buf := bufio.NewReader(os.Stdout)
-		fmt.Println("Do you want to create new DB and remove old? Yes or No")
-		read, err := buf.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		if strings.ToLower(strings.TrimSpace(read)) == "yes" {
-			f, err := os.Create(*initdbDBLoc)
-			if err != nil {
-				return err
-			}
-			f.Close()
-			fmt.Println("Database in file ", initdbDBLoc, " created!")
+	dbLocation := *initdbDBLoc
 
-			if err != nil {
-				return err
-			}
+	log.Debug.Printf("creating database in file %s", dbLocation)
 
-			repository.CreatedTableUsers()
-			repository.AddTestUsers()
-
-			return nil
-
-		} else {
-			fmt.Println("Data Base exist")
-			return nil
-		}
-	} else {
-		f, err := os.Create(*initdbDBLoc)
-		if err != nil {
-			return err
-		}
-		f.Close()
-		fmt.Println("Database in file ", initdbDBLoc, " created!")
-
-		if err != nil {
-			return err
-		}
-
-		repository.CreatedTableUsers()
-		repository.AddTestUsers()
-		return nil
+	db, err := sql.Open("sqlite3", dbLocation)
+	if err != nil {
+		panic(err)
 	}
-}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error.Printf("failed to close database: %s", err)
+		}
+	}()
 
-func checkDBExist(filepath string) bool {
-	_, err := os.Stat(filepath)
-	return !errors.Is(err, os.ErrNotExist)
+	repository.CreatedTableUsers(db)
+
+	if *addTestUsers {
+		repository.AddTestUsers(db)
+	}
+
+	log.Debug.Printf("database created successfully at %s", dbLocation)
+	return nil
 }

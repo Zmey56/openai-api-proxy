@@ -3,32 +3,11 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
+	"github.com/Zmey56/openai-api-proxy/log"
 	"time"
 )
 
-func AddTestUsers() {
-	//path to DB
-	currentWorkingDirectory, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
-	log.Println(pathDB)
-
-	//Opening a database connection
-	db, err := sql.Open("sqlite3", pathDB)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
+func AddTestUsers(db *sql.DB) {
 	// Generating random data for the "users" table
 	for i := 1; i <= 10; i++ {
 
@@ -45,13 +24,17 @@ func AddTestUsers() {
 		updatedAt := time.Now()
 
 		// Inserting the random data into the "users" table
-		_, err = db.Exec(`INSERT INTO users (first_name, last_name, hashed_password, email, access_level,
-                   amount_money, tokens, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		_, err := db.Exec(`INSERT INTO users (login, first_name, last_name, hashed_password, email, access_level,
+                   amount_money, tokens, auth_token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			login, firstName, lastName, hashedPassword, email, accessLevel,
 			amountMoney, tokens, authToken, createdAt, updatedAt)
 		if err != nil {
-			panic(err)
+			log.Error.Printf("failed to insert data into the 'users' table: %s", err)
+		}
+
+		if log.IsDebug() {
+			log.Debug.Printf("created user %s, token %s", login, authToken)
 		}
 	}
-	fmt.Println("Data has been generated and inserted into the 'users' table")
+	log.Info.Println("test users has been created")
 }
