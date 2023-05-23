@@ -13,7 +13,7 @@ After that you can invoke requests to OpenAI like
 ```bash
 curl http://localhost:8080/openai/v1/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Authorization: login_1|test_1" \
   -d '{
     "model": "text-davinci-003",
     "prompt": "Say this is a test",
@@ -27,7 +27,7 @@ Or
 ```bash
 curl http://localhost:8080/openai/v1/images/generations \
   -H "Content-Type: application/json" \
-  -H "Authorization: test" \
+  -H "Authorization: login_1|test_1" \
   -d '{
     "prompt": "The emblem for the channel in telegrams on p2p cryptocurrency arbitration",
     "n": 2,
@@ -38,7 +38,7 @@ curl http://localhost:8080/openai/v1/images/generations \
 ```bash
 curl http://localhost:8080/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: test" \
+  -H "Authorization: login_1|test_1" \
   -d '{
     "model": "gpt-3.5-turbo",                                                                                         
     "messages": [{"role": "user", "content": "Hello!"}]

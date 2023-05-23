@@ -10,19 +10,12 @@ import (
 
 // CreatedTableUsers create new table for users TO DO add colums with token and amount money
 func CreatedTableUsers() {
-	currentWorkingDirectory, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
 
-	db, err := sql.Open("sqlite3", pathDB)
+	db, err := sql.Open("sqlite3", getPathDB())
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
-
-	log.Println(db)
 
 	err = db.Ping()
 	if err != nil {
@@ -48,10 +41,42 @@ func CreatedTableUsers() {
 		panic(err)
 	}
 
-	log.Println("Table for users have created!!!")
-
 }
 
-func FindUser() {
+func VerifyTokenSQL(usertoken []string) (bool, error) {
+	db, err := sql.Open("sqlite3", getPathDB())
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
 
+	query := `SELECT auth_token FROM users WHERE login = ?`
+	rows, err := db.Query(query, usertoken[0])
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var tokenDB string
+		err = rows.Scan(&tokenDB)
+		if err != nil {
+			return false, err
+		}
+
+		if usertoken[1] == tokenDB {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func getPathDB() string {
+	currentWorkingDirectory, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
+	return pathDB
 }

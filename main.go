@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"os"
-	"strings"
 )
 
 var (
@@ -122,50 +120,26 @@ func runServer() error {
 }
 
 func runInitDb() error {
-	if checkDBExist(*initdbDBLoc) {
-		buf := bufio.NewReader(os.Stdout)
-		fmt.Println("Do you want to create new DB and remove old? Yes or No")
-		read, err := buf.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		if strings.ToLower(strings.TrimSpace(read)) == "yes" {
-			f, err := os.Create(*initdbDBLoc)
-			if err != nil {
-				return err
-			}
-			f.Close()
-			fmt.Println("Database in file ", initdbDBLoc, " created!")
 
-			if err != nil {
-				return err
-			}
-
-			repository.CreatedTableUsers()
-			repository.AddTestUsers()
-
-			return nil
-
-		} else {
-			fmt.Println("Data Base exist")
-			return nil
-		}
-	} else {
-		f, err := os.Create(*initdbDBLoc)
-		if err != nil {
-			return err
-		}
-		f.Close()
-		fmt.Println("Database in file ", initdbDBLoc, " created!")
-
-		if err != nil {
-			return err
-		}
-
-		repository.CreatedTableUsers()
-		repository.AddTestUsers()
-		return nil
+	f, err := os.Create(*initdbDBLoc)
+	if err != nil {
+		return err
 	}
+	err = f.Close()
+	// ++TO DO add error + read about pull request
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+
+	repository.CreatedTableUsers()
+	repository.AddTestUsers()
+
+	return nil
+
 }
 
 func checkDBExist(filepath string) bool {
