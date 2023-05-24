@@ -21,10 +21,11 @@ var (
 	openaiToken   = serverCmd.String("openai-token", os.Getenv("OPENAI_TOKEN"), "the token used to communicate with OpenAI API")
 	openaiAddress = serverCmd.String("openai-address", "https://api.openai.com", "the address of the OpenAI API")
 	serverAddress = serverCmd.String("local-addr", "localhost:8080", "the binding for the server (host and port)")
-	serverDBLoc   = serverCmd.String("db", "db.sqlite3", "the location of the database")
+	serverDBLoc   = serverCmd.String("db-location", "db.sqlite3", "the location of the database")
 
-	initdbCmd   = flag.NewFlagSet("initdb", flag.ExitOnError)
-	initdbDBLoc = initdbCmd.String("db", "openaiapiproxi.db", "the location of the database")
+	initdbCmd    = flag.NewFlagSet("initdb", flag.ExitOnError)
+	initdbDBLoc  = initdbCmd.String("db-location", "db.sqlite3", "the location of the database")
+	addTestUsers = initdbCmd.Bool("add-test-users", false, "add test users to the database")
 )
 
 func printUsage() {
@@ -142,7 +143,7 @@ func runInitDb() error {
 
 }
 
-func checkDBExist(filepath string) bool {
-	_, err := os.Stat(filepath)
-	return !errors.Is(err, os.ErrNotExist)
+
+	log.Debug.Printf("database created successfully at %s", dbLocation)
+	return nil
 }

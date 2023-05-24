@@ -2,13 +2,12 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"github.com/Zmey56/openai-api-proxy/log"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
-	"os"
 )
 
 // CreatedTableUsers create new table for users TO DO add colums with token and amount money
+
 func CreatedTableUsers() {
 
 	db, err := sql.Open("sqlite3", getPathDB())

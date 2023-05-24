@@ -5,3 +5,4 @@ test/
 *.db
 testusers.go
 test.*
+openai-api-proxy
