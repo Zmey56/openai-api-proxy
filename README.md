@@ -13,7 +13,7 @@ After that you can invoke requests to OpenAI like
 ```bash
 curl http://localhost:8080/openai/v1/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: login_1|test_1" \
+  -H "Authorization: login_1|password9" \
   -d '{
     "model": "text-davinci-003",
     "prompt": "Say this is a test",

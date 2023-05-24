@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -141,9 +140,4 @@ func runInitDb() error {
 
 	return nil
 
-}
-
-
-	log.Debug.Printf("database created successfully at %s", dbLocation)
-	return nil
 }

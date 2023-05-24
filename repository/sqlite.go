@@ -2,15 +2,22 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/Zmey56/openai-api-proxy/log"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 )
 
 // CreatedTableUsers create new table for users TO DO add colums with token and amount money
 
 func CreatedTableUsers() {
 
-	db, err := sql.Open("sqlite3", getPathDB())
+	pathDB, err := getPathDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	db, err := sql.Open("sqlite3", pathDB)
 	if err != nil {
 		panic(err)
 	}
@@ -42,28 +49,34 @@ func CreatedTableUsers() {
 
 }
 
-func VerifyTokenSQL(usertoken []string) (bool, error) {
-	db, err := sql.Open("sqlite3", getPathDB())
+func VerifyTokenSQL(user, pass string) (bool, error) {
+	pathDB, err := getPathDB()
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+
+	db, err := sql.Open("sqlite3", pathDB)
 	if err != nil {
 		return false, err
 	}
 	defer db.Close()
 
-	query := `SELECT auth_token FROM users WHERE login = ?`
-	rows, err := db.Query(query, usertoken[0])
+	query := `SELECT hashed_password FROM users WHERE login = ?`
+	rows, err := db.Query(query, user)
 	if err != nil {
 		return false, err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		var tokenDB string
-		err = rows.Scan(&tokenDB)
+		var hashed_password string
+		err = rows.Scan(&hashed_password)
 		if err != nil {
 			return false, err
 		}
 
-		if usertoken[1] == tokenDB {
+		if hashed_password == pass {
 			return true, nil
 		}
 	}
@@ -71,11 +84,11 @@ func VerifyTokenSQL(usertoken []string) (bool, error) {
 	return false, nil
 }
 
-func getPathDB() string {
+func getPathDB() (string, error) {
 	currentWorkingDirectory, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
-	return pathDB
+	return pathDB, nil
 }
