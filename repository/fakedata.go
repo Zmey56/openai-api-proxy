@@ -7,17 +7,10 @@ import (
 	"time"
 )
 
-
-func AddTestUsers() {
-	//path to DB
-	currentWorkingDirectory, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
+func AddTestUsers(nameDB *string) {
 
 	//Opening a database connection
-	db, err := sql.Open("sqlite3", pathDB)
+	db, err := sql.Open("sqlite3", *nameDB)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +20,6 @@ func AddTestUsers() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	// Generating random data for the "users" table
 	for i := 1; i <= 10; i++ {

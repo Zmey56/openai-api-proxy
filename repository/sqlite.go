@@ -2,22 +2,14 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
+	"path"
 )
 
-// CreatedTableUsers create new table for users TO DO add colums with token and amount money
+func CreatedTableUsers(nameDB *string) {
 
-func CreatedTableUsers() {
-
-	pathDB, err := getPathDB()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	db, err := sql.Open("sqlite3", pathDB)
+	db, err := sql.Open("sqlite3", *nameDB)
 	if err != nil {
 		panic(err)
 	}
@@ -49,14 +41,8 @@ func CreatedTableUsers() {
 
 }
 
-func VerifyTokenSQL(user, pass string) (bool, error) {
-	pathDB, err := getPathDB()
-	if err != nil {
-		fmt.Println(err)
-		return false, err
-	}
-
-	db, err := sql.Open("sqlite3", pathDB)
+func VerifyTokenSQL(nameDB *string, user, pass string) (bool, error) {
+	db, err := sql.Open("sqlite3", *nameDB)
 	if err != nil {
 		return false, err
 	}
@@ -89,6 +75,6 @@ func getPathDB() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pathDB := fmt.Sprintf("%s/openaiapiproxi.db", currentWorkingDirectory)
+	pathDB := path.Join("%s/openaiapiproxi.db", currentWorkingDirectory)
 	return pathDB, nil
 }

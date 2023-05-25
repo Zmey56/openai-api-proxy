@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -63,6 +64,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	db, err := sql.Open("sqlite3", *initdbDBLoc)
+	if err != nil {
+		log.Error.Fatal(err)
+	}
+	defer db.Close()
+
 	cmd := args[0]
 
 	switch cmd {
@@ -72,7 +79,7 @@ func main() {
 			printUsage()
 			os.Exit(1)
 		}
-		if err := runServer(); err != nil {
+		if err := runServer(db); err != nil {
 			log.Error.Fatal(err)
 		}
 	case "initdb":
@@ -93,12 +100,15 @@ func main() {
 	}
 }
 
-func runServer() error {
-	mux := http.NewServeMux()
+func runServer(db *sql.DB) error {
+	fmt.Println(*initdbDBLoc)
 
+	mux := http.NewServeMux()
+	
 	proxyInst, err := proxy.NewProxy(proxy.Configuration{
 		OpenaiToken:   *openaiToken,
 		OpenaiAddress: *openaiAddress,
+		DBConnection:  db,
 	})
 	if err != nil {
 		return err
@@ -126,7 +136,6 @@ func runInitDb() error {
 		return err
 	}
 	err = f.Close()
-	// ++TO DO add error + read about pull request
 	if err != nil {
 		return err
 	}
@@ -135,8 +144,8 @@ func runInitDb() error {
 		return err
 	}
 
-	repository.CreatedTableUsers()
-	repository.AddTestUsers()
+	repository.CreatedTableUsers(initdbDBLoc)
+	repository.AddTestUsers(initdbDBLoc)
 
 	return nil
 
