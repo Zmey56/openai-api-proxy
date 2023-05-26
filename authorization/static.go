@@ -1,7 +1,7 @@
 package authorization
 
 import (
-	"github.com/Zmey56/openai-api-proxy/repository"
+	"fmt"
 )
 
 // StaticService is a static implementation of the authorization service
@@ -10,15 +10,6 @@ type StaticService struct {
 }
 
 func (s StaticService) Verify(username, password string) bool {
-	verifyToken, err := repository.VerifyTokenSQL(username, password)
-	if err != nil {
-		return false
-	}
-
-	if verifyToken {
-		return true
-	} else {
-		return false
-	}
-
+	fmt.Println(username)
+	return true
 }

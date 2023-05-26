@@ -21,10 +21,10 @@ var (
 	openaiToken   = serverCmd.String("openai-token", os.Getenv("OPENAI_TOKEN"), "the token used to communicate with OpenAI API")
 	openaiAddress = serverCmd.String("openai-address", "https://api.openai.com", "the address of the OpenAI API")
 	serverAddress = serverCmd.String("local-addr", "localhost:8080", "the binding for the server (host and port)")
-	serverDBLoc   = serverCmd.String("db-location", "db.sqlite3", "the location of the database")
+	serverDBLoc   = serverCmd.String("db-location", "sqlite3.db", "the location of the database")
 
 	initdbCmd    = flag.NewFlagSet("initdb", flag.ExitOnError)
-	initdbDBLoc  = initdbCmd.String("db-location", "db.sqlite3", "the location of the database")
+	initdbDBLoc  = initdbCmd.String("db-location", "sqlite3.db", "the location of the database")
 	addTestUsers = initdbCmd.Bool("add-test-users", false, "add test users to the database")
 )
 
@@ -104,12 +104,12 @@ func runServer(db *sql.DB) error {
 	fmt.Println(*initdbDBLoc)
 
 	mux := http.NewServeMux()
-	
+
 	proxyInst, err := proxy.NewProxy(proxy.Configuration{
 		OpenaiToken:   *openaiToken,
 		OpenaiAddress: *openaiAddress,
-		DBConnection:  db,
 	})
+
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func runServer(db *sql.DB) error {
 
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authService),
+			middlewares.AuthorizationMiddleware(proxyInst, authService, db),
 			"/openai/",
 		),
 	)

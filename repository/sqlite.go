@@ -41,12 +41,7 @@ func CreatedTableUsers(nameDB *string) {
 
 }
 
-func VerifyTokenSQL(nameDB *string, user, pass string) (bool, error) {
-	db, err := sql.Open("sqlite3", *nameDB)
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
+func VerifyTokenSQL(user, pass string, db *sql.DB) (bool, error) {
 
 	query := `SELECT hashed_password FROM users WHERE login = ?`
 	rows, err := db.Query(query, user)

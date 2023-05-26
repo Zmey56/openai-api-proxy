@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"database/sql"
+	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
 	"github.com/Zmey56/openai-api-proxy/repository"
 	"io"
@@ -9,12 +11,14 @@ import (
 
 // AuthorizationMiddleware is a middleware that checks if the user is authorized to use the proxy
 // and injects the user into in the header Openai-Api-Proxy-User
-func AuthorizationMiddleware(next http.Handler, service authorization.Service) http.Handler {
+func AuthorizationMiddleware(next http.Handler, service authorization.Service, db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// trying to identify the user
 		username, pass, ok := r.BasicAuth()
 
-		verifyToken, err := repository.VerifyTokenSQL(username, pass)
+		fmt.Println(r.Body)
+
+		verifyToken, err := repository.VerifyTokenSQL(username, pass, db)
 		if err != nil {
 			_, _ = io.Copy(io.Discard, r.Body)
 			_ = r.Body.Close()
