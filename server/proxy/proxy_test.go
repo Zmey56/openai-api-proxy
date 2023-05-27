@@ -74,8 +74,9 @@ func TestProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// TODO: fix test!!!
 		proxyServer := httptest.NewServer(middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(p, authorization.StaticService{}),
+			middlewares.AuthorizationMiddleware(p, authorization.StaticService{}, nil),
 			"/openai/",
 		))
 		defer proxyServer.Close()

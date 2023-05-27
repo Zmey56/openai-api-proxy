@@ -2,25 +2,34 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/Zmey56/openai-api-proxy/log"
 	_ "github.com/mattn/go-sqlite3"
-	"os"
-	"path"
 )
 
-func CreatedTableUsers(nameDB *string) {
+type DBImpl struct {
+	db *sql.DB
+}
 
-	db, err := sql.Open("sqlite3", *nameDB)
+func NewSQLite(path string) (*DBImpl, error) {
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	defer db.Close()
-
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		// TODO: maybe need to close the db here?
+		return nil, err
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
+	return &DBImpl{db: db}, nil
+}
+
+func (db *DBImpl) Close() error {
+	return db.db.Close()
+}
+
+func (db *DBImpl) CreatedTableUsers() error {
+	_, err := db.db.Exec(`CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY,
                         login NOT NULL UNIQUE,
                         first_name TEXT NOT NULL,
@@ -35,41 +44,33 @@ func CreatedTableUsers(nameDB *string) {
 					 	updated_at DATETIME NOT NULL
                     )`)
 
-	if err != nil {
-		panic(err)
-	}
-
+	return err
 }
 
-func VerifyTokenSQL(user, pass string, db *sql.DB) (bool, error) {
-
+func (db *DBImpl) VerifyToken(user, pass string) (bool, error) {
 	query := `SELECT hashed_password FROM users WHERE login = ?`
-	rows, err := db.Query(query, user)
+	rows, err := db.db.Query(query, user)
 	if err != nil {
 		return false, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Debug.Printf("failed to close rows: %s", err)
+		}
+	}()
 
 	if rows.Next() {
-		var hashed_password string
-		err = rows.Scan(&hashed_password)
+		var hashedPassword string
+		err = rows.Scan(&hashedPassword)
 		if err != nil {
 			return false, err
 		}
 
-		if hashed_password == pass {
+		if hashedPassword == pass {
 			return true, nil
 		}
 	}
 
 	return false, nil
-}
-
-func getPathDB() (string, error) {
-	currentWorkingDirectory, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	pathDB := path.Join("%s/openaiapiproxi.db", currentWorkingDirectory)
-	return pathDB, nil
 }

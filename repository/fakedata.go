@@ -1,26 +1,12 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/log"
 	"time"
 )
 
-func AddTestUsers(nameDB *string) {
-
-	//Opening a database connection
-	db, err := sql.Open("sqlite3", *nameDB)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
+func (db *DBImpl) AddTestUsers() {
 	// Generating random data for the "users" table
 	for i := 1; i <= 10; i++ {
 
@@ -38,7 +24,7 @@ func AddTestUsers(nameDB *string) {
 
 		// Inserting the random data into the "users" table
 
-		_, err = db.Exec(`INSERT INTO users (login, first_name, last_name, hashed_password, email, access_level,
+		_, err := db.db.Exec(`INSERT INTO users (login, first_name, last_name, hashed_password, email, access_level,
                    amount_money, tokens, auth_token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			login, firstName, lastName, hashedPassword, email, accessLevel,
 			amountMoney, tokens, authToken, createdAt, updatedAt)
@@ -50,5 +36,4 @@ func AddTestUsers(nameDB *string) {
 			log.Debug.Printf("created user %s, token %s", login, authToken)
 		}
 	}
-
 }

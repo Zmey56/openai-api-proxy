@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -64,12 +63,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("sqlite3", *initdbDBLoc)
-	if err != nil {
-		log.Error.Fatal(err)
-	}
-	defer db.Close()
-
 	cmd := args[0]
 
 	switch cmd {
@@ -79,7 +72,7 @@ func main() {
 			printUsage()
 			os.Exit(1)
 		}
-		if err := runServer(db); err != nil {
+		if err := runServer(); err != nil {
 			log.Error.Fatal(err)
 		}
 	case "initdb":
@@ -100,15 +93,27 @@ func main() {
 	}
 }
 
-func runServer(db *sql.DB) error {
-	fmt.Println(*initdbDBLoc)
+func runServer() error {
+	db, err := repository.NewSQLite(*serverDBLoc)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error.Fatal(err)
+		}
+	}()
 
 	mux := http.NewServeMux()
 
-	proxyInst, err := proxy.NewProxy(proxy.Configuration{
-		OpenaiToken:   *openaiToken,
-		OpenaiAddress: *openaiAddress,
-	})
+	proxyInst, err := proxy.NewProxy(
+		proxy.Configuration{
+			OpenaiToken:   *openaiToken,
+			OpenaiAddress: *openaiAddress,
+		},
+	)
 
 	if err != nil {
 		return err
@@ -116,9 +121,7 @@ func runServer(db *sql.DB) error {
 
 	authService := authorization.StaticService{}
 
-	fmt.Println("proxyInst", proxyInst)
-	fmt.Println("authService", authService)
-
+	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
 			middlewares.AuthorizationMiddleware(proxyInst, authService, db),
@@ -126,27 +129,40 @@ func runServer(db *sql.DB) error {
 		),
 	)
 
+	versionHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("\"0.0.0\"\n"))
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// curl -u user:password http://localhost:8080/version/
+	mux.Handle("/version/",
+		middlewares.AuthorizationMiddleware(versionHandler, authService, db),
+	)
+
 	return http.ListenAndServe(*serverAddress, mux)
 }
 
 func runInitDb() error {
-
-	f, err := os.Create(*initdbDBLoc)
-	if err != nil {
-		return err
-	}
-	err = f.Close()
+	db, err := repository.NewSQLite(*initdbDBLoc)
 	if err != nil {
 		return err
 	}
 
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error.Fatal(err)
+		}
+	}()
+
+	err = db.CreatedTableUsers()
 	if err != nil {
 		return err
 	}
 
-	repository.CreatedTableUsers(initdbDBLoc)
-	repository.AddTestUsers(initdbDBLoc)
+	if *addTestUsers {
+		db.AddTestUsers()
+	}
 
 	return nil
-
 }
