@@ -160,6 +160,11 @@ func runInitDb() error {
 		return err
 	}
 
+	err = db.AddTestUsers()
+	if err != nil {
+		return err
+	}
+
 	if *addTestUsers {
 		db.AddTestUsers()
 	}

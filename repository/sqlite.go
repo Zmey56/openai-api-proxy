@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"github.com/Zmey56/openai-api-proxy/log"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
+	"strings"
 )
 
 type DBImpl struct {
@@ -49,7 +51,7 @@ func (db *DBImpl) CreatedTableUsers() error {
 
 func (db *DBImpl) VerifyToken(user, pass string) (bool, error) {
 	query := `SELECT hashed_password FROM users WHERE login = ?`
-	rows, err := db.db.Query(query, user)
+	rows, err := db.db.Query(query, strings.ToLower(user))
 	if err != nil {
 		return false, err
 	}
@@ -67,10 +69,13 @@ func (db *DBImpl) VerifyToken(user, pass string) (bool, error) {
 			return false, err
 		}
 
-		if hashedPassword == pass {
+		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(pass))
+		if err != nil {
+			return false, nil
+		} else {
 			return true, nil
 		}
 	}
 
-	return false, nil
+	return false, err
 }
