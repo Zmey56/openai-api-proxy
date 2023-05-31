@@ -16,7 +16,7 @@ func (db *DBImpl) AddTestUsers() error {
 		lastName := fmt.Sprintf("last_name%d", i)
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(fmt.Sprintf("password%d", i)), bcrypt.DefaultCost)
 		if err != nil {
-			fmt.Println("Problem with hashedPassword")
+			log.Debug.Printf("failed to generate hash from password %d", err)
 			return err
 		}
 		email := fmt.Sprintf("user%d@example.com", i)
@@ -40,6 +40,7 @@ func (db *DBImpl) AddTestUsers() error {
 		if log.IsDebug() {
 			log.Debug.Printf("created user %s, token %s", login, authToken)
 		}
+		
 	}
 
 	return nil

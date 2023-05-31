@@ -49,11 +49,11 @@ func (db *DBImpl) CreatedTableUsers() error {
 	return err
 }
 
-func (db *DBImpl) VerifyToken(user, pass string) (bool, error) {
+func (db *DBImpl) VerifyToken(user, pass string) error {
 	query := `SELECT hashed_password FROM users WHERE login = ?`
 	rows, err := db.db.Query(query, strings.ToLower(user))
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer func() {
 		err := rows.Close()
@@ -63,19 +63,19 @@ func (db *DBImpl) VerifyToken(user, pass string) (bool, error) {
 	}()
 
 	if rows.Next() {
-		var hashedPassword string
+		var hashedPassword []byte
 		err = rows.Scan(&hashedPassword)
 		if err != nil {
-			return false, err
+			return err
 		}
 
-		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(pass))
+		err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(pass))
 		if err != nil {
-			return false, nil
+			return err
 		} else {
-			return true, nil
+			return nil
 		}
 	}
 
-	return false, err
+	return err
 }

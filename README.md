@@ -64,3 +64,9 @@ To see the full requests and responses, use `-log-level=trace` flag.
 ```bash
 go run . -log-level=trace server -db db.sqlite3 -openai-token sk-YOUROPENAITOKEN
 ```
+
+TTo create new DB with test users
+
+```bash
+go run . initdb -add-test-users
+```
