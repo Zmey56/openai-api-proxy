@@ -49,7 +49,7 @@ func (db *DBImpl) CreatedTableUsers() error {
 	return err
 }
 
-func (db *DBImpl) VerifyToken(user, pass string) error {
+func (db *DBImpl) VerifyUserPass(user, pass string) error {
 	query := `SELECT hashed_password FROM users WHERE login = ?`
 	rows, err := db.db.Query(query, strings.ToLower(user))
 	if err != nil {

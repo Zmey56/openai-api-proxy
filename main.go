@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -25,6 +26,8 @@ var (
 	initdbCmd    = flag.NewFlagSet("initdb", flag.ExitOnError)
 	initdbDBLoc  = initdbCmd.String("db-location", "sqlite3.db", "the location of the database")
 	addTestUsers = initdbCmd.Bool("add-test-users", false, "add test users to the database")
+
+	InvalidUsernameOrPassword = errors.New("user does not exist or passwords do not match")
 )
 
 func printUsage() {
@@ -119,14 +122,16 @@ func runServer() error {
 		return err
 	}
 
-	authService := authorization.StaticService{
-		DataBase: db,
+	authDB := authorization.DBAuth{
+		Database: db,
 	}
+
+	authService := authorization.StaticService{}
 
 	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authService),
+			middlewares.AuthorizationMiddleware(proxyInst, authService, authDB),
 			"/openai/",
 		),
 	)
@@ -138,7 +143,7 @@ func runServer() error {
 
 	// curl -u user:password http://localhost:8080/version/
 	mux.Handle("/version/",
-		middlewares.AuthorizationMiddleware(versionHandler, authService),
+		middlewares.AuthorizationMiddleware(versionHandler, authService, authDB),
 	)
 
 	return http.ListenAndServe(*serverAddress, mux)

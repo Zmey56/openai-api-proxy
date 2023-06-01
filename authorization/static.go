@@ -1,22 +1,30 @@
 package authorization
 
 import (
-	"fmt"
-	"github.com/Zmey56/openai-api-proxy/repository"
+	"errors"
+	"strings"
+)
+
+var (
+	InvalidUsernameOrPassword = errors.New("user does not exist or passwords do not match")
 )
 
 // StaticService is a static implementation of the authorization service
 // Good for testing, only one token is allowed - "test"
 type StaticService struct {
-	DataBase *repository.DBImpl
+	username string
+	password string
 }
 
-func (s StaticService) Verify(username, password string) error {
-	err := s.DataBase.VerifyToken(username, password)
-	if err != nil {
-		return err
-	} else {
-		fmt.Println(username)
+func NewStaticService(u, p string) *StaticService {
+	return &StaticService{username: u, password: p}
+}
+
+func (s StaticService) Verify(u, p string) error {
+
+	if strings.ToLower(s.username) == strings.ToLower(u) && strings.ToLower(s.password) == strings.ToLower(p) {
+		return nil
 	}
-	return nil
+
+	return InvalidUsernameOrPassword
 }
