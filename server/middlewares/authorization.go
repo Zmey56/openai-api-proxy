@@ -30,9 +30,18 @@ func AuthorizationMiddleware(next http.Handler, service authorization.StaticServ
 		} else {
 			username, pass, ok := r.BasicAuth()
 
+			if !ok {
+				_, _ = io.Copy(io.Discard, r.Body)
+				_ = r.Body.Close()
+
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte("Unauthorized"))
+				return
+			}
+
 			err := db.VerifyDB(username, pass)
 
-			if err != nil || !ok {
+			if err != nil {
 				_, _ = io.Copy(io.Discard, r.Body)
 				_ = r.Body.Close()
 
