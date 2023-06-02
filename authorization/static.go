@@ -22,7 +22,7 @@ func NewStaticService(u, p string) *StaticService {
 
 func (s StaticService) Verify(u, p string) error {
 
-	if strings.ToLower(s.username) == strings.ToLower(u) && strings.ToLower(s.password) == strings.ToLower(p) {
+	if strings.ToLower(s.username) == strings.ToLower(u) && s.password == p {
 		return nil
 	}
 

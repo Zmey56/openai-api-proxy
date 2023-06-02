@@ -122,16 +122,12 @@ func runServer() error {
 		return err
 	}
 
-	authDB := authorization.DBAuth{
-		Database: db,
-	}
-
-	authService := authorization.StaticService{}
+	authDB := authorization.NewDBConnection(db)
 
 	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authService, authDB),
+			middlewares.AuthorizationMiddleware(proxyInst, authDB),
 			"/openai/",
 		),
 	)
@@ -143,7 +139,7 @@ func runServer() error {
 
 	// curl -u user:password http://localhost:8080/version/
 	mux.Handle("/version/",
-		middlewares.AuthorizationMiddleware(versionHandler, authService, authDB),
+		middlewares.AuthorizationMiddleware(versionHandler, authDB),
 	)
 
 	return http.ListenAndServe(*serverAddress, mux)

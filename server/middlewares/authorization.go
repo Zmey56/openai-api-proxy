@@ -8,52 +8,36 @@ import (
 
 // AuthorizationMiddleware is a middleware that checks if the user is authorized to use the proxy
 // and injects the user into in the header Openai-Api-Proxy-User
-func AuthorizationMiddleware(next http.Handler, service authorization.StaticService, db authorization.DBAuth) http.Handler {
+func AuthorizationMiddleware(next http.Handler, service authorization.Service) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// trying to identify the user
 
-		if db.Database == nil {
-			username, pass, _ := r.BasicAuth()
-			err := service.Verify(username, pass)
-			if err != nil {
-				_, _ = io.Copy(io.Discard, r.Body)
-				_ = r.Body.Close()
+		username, pass, ok := r.BasicAuth()
 
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-				return
-			}
+		if !ok {
+			_, _ = io.Copy(io.Discard, r.Body)
+			_ = r.Body.Close()
 
-			// set our own user to the header
-			r.Header.Set("openai-api-proxy-user", username)
-
-			next.ServeHTTP(w, r)
-		} else {
-			username, pass, ok := r.BasicAuth()
-
-			if !ok {
-				_, _ = io.Copy(io.Discard, r.Body)
-				_ = r.Body.Close()
-
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Unauthorized"))
-				return
-			}
-
-			err := db.VerifyDB(username, pass)
-
-			if err != nil {
-				_, _ = io.Copy(io.Discard, r.Body)
-				_ = r.Body.Close()
-
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Unauthorized"))
-				return
-			}
-
-			// set our own user to the header
-			r.Header.Set("openai-api-proxy-user", username)
-
-			next.ServeHTTP(w, r)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
 		}
+
+		err := service.Verify(username, pass)
+
+		if err != nil {
+			_, _ = io.Copy(io.Discard, r.Body)
+			_ = r.Body.Close()
+
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+
+		// set our own user to the header
+		r.Header.Set("openai-api-proxy-user", username)
+
+		next.ServeHTTP(w, r)
+
 	})
 }

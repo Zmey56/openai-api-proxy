@@ -1,7 +1,6 @@
 package proxy_test
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"github.com/Zmey56/openai-api-proxy/authorization"
 	"github.com/Zmey56/openai-api-proxy/server/middlewares"
@@ -83,7 +82,7 @@ func TestProxy(t *testing.T) {
 		staticServiceAuth := *authorization.NewStaticService(login, pass)
 
 		proxyServer := httptest.NewServer(middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(p, staticServiceAuth, authorization.DBAuth{nil}),
+			middlewares.AuthorizationMiddleware(p, staticServiceAuth),
 			"/openai/",
 		))
 		defer proxyServer.Close()
@@ -98,11 +97,8 @@ func TestProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		credentials := strings.Join([]string{login, pass}, ":")
-		encodedCredentials := base64.StdEncoding.EncodeToString([]byte(credentials))
-
 		request.Header.Add("Content-Type", "application/json")
-		request.Header.Add("Authorization", "Basic "+encodedCredentials)
+		request.SetBasicAuth(login, pass)
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			t.Fatal(err)
