@@ -122,7 +122,7 @@ func runServer() error {
 		return err
 	}
 
-	authDB := authorization.NewDBConnection(db)
+	authDB := authorization.NewDatabaseService(db)
 
 	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",

@@ -8,7 +8,7 @@ type DatabaseService struct {
 	database *repository.DBImpl
 }
 
-func NewDBConnection(db *repository.DBImpl) *DatabaseService {
+func NewDatabaseService(db *repository.DBImpl) *DatabaseService {
 	return &DatabaseService{
 		database: db,
 	}
