@@ -19,7 +19,6 @@ func NewSQLite(path string) (*DBImpl, error) {
 	}
 	err = db.Ping()
 	if err != nil {
-		// TODO: maybe need to close the db here?
 		return nil, err
 	}
 

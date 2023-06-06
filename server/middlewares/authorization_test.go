@@ -2,17 +2,20 @@ package middlewares
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 type MockAuthorizationService struct {
-	verifyFunc func(username, password string) error
+	verifyFunc       func(username, password string) error
+	receivedUsername string
+	receivedPassword string
 }
 
 func (m *MockAuthorizationService) Verify(username, password string) error {
+	m.receivedUsername = username
+	m.receivedPassword = password
 	return m.verifyFunc(username, password)
 }
 
@@ -25,6 +28,12 @@ func TestAuthorizationMiddleware_CorrectCredentials(t *testing.T) {
 
 	mockService := &MockAuthorizationService{
 		verifyFunc: func(username, password string) error {
+			if username != "correctUsername" {
+				t.Errorf("Expected username 'correctUsername' got %s", username)
+			}
+			if password != "correctPassword" {
+				t.Errorf("Expected username 'correctPassword' got %s", username)
+			}
 			return nil
 		},
 	}
@@ -47,14 +56,18 @@ func TestAuthorizationMiddleware_CorrectCredentials(t *testing.T) {
 func TestAuthorizationMiddleware_IncorrectUsername(t *testing.T) {
 	mockService := &MockAuthorizationService{
 		verifyFunc: func(username, password string) error {
+			if username != "incorrectUsername" {
+				t.Errorf("Expected username 'incorrectUsername' got %s", username)
+			}
+			if password != "somePassword" {
+				t.Errorf("Expected username 'somePassword' got %s", username)
+			}
 			return ErrUserNotFound
 		},
 	}
 
 	handler := AuthorizationMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}), mockService)
-
-	fmt.Println(handler.ServeHTTP)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.SetBasicAuth("incorrectUsername", "somePassword")
@@ -70,6 +83,12 @@ func TestAuthorizationMiddleware_IncorrectUsername(t *testing.T) {
 func TestAuthorizationMiddleware_IncorrectCredentials(t *testing.T) {
 	mockService := &MockAuthorizationService{
 		verifyFunc: func(username, password string) error {
+			if username != "incorrectUsername" {
+				t.Errorf("Expected username 'incorrectUsername' got %s", username)
+			}
+			if password != "incorrectPassword" {
+				t.Errorf("Expected username 'incorrectPassword' got %s", username)
+			}
 			return ErrInvalidCredentials
 		},
 	}
