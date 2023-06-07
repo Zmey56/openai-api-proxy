@@ -25,7 +25,6 @@ var (
 )
 
 func TestAuthorizationMiddleware_CorrectCredentials(t *testing.T) {
-
 	mockService := &MockAuthorizationService{
 		verifyFunc: func(username, password string) error {
 			if username != "correctUsername" {
