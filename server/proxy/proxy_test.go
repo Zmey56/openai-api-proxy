@@ -74,8 +74,6 @@ func TestProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// TODO: fix test!!!
-
 		login := "test"
 		pass := "test_password"
 

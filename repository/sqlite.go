@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/Zmey56/openai-api-proxy/log"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
@@ -63,6 +65,7 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 
 	if rows.Next() {
 		var hashedPassword []byte
+		fmt.Println(rows)
 		err = rows.Scan(&hashedPassword)
 		if err != nil {
 			return err
@@ -76,5 +79,5 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 		}
 	}
 
-	return err
+	return errors.New("user not found")
 }

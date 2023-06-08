@@ -16,6 +16,7 @@ func NewDatabaseService(db *repository.DBImpl) *DatabaseService {
 
 func (s DatabaseService) Verify(username, password string) error {
 	err := s.database.VerifyUserPass(username, password)
+
 	if err != nil {
 		return err
 	}

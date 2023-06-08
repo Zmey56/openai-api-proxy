@@ -6,4 +6,4 @@ test/
 testusers.go
 test.*
 openai-api-proxy
-
+.DS_Store

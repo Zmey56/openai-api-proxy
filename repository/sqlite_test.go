@@ -71,7 +71,6 @@ func TestSQLite(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-
 	t.Run("incorrect password", func(t *testing.T) {
 		err = db.VerifyUserPass("login_2", "password_incorrect")
 		if err == nil {
