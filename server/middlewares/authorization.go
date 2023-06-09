@@ -38,7 +38,7 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 
 		// set our own user to the header
 		r.Header.Set("openai-api-proxy-user", username)
-
+		
 		next.ServeHTTP(w, r)
 
 	})

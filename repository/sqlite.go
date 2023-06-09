@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/Zmey56/openai-api-proxy/log"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
@@ -65,14 +64,15 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 
 	if rows.Next() {
 		var hashedPassword []byte
-		fmt.Println(rows)
 		err = rows.Scan(&hashedPassword)
 		if err != nil {
+			log.Error.Print("Can't Scan password")
 			return err
 		}
 
 		err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(pass))
 		if err != nil {
+			log.Error.Print("Password not found")
 			return err
 		} else {
 			return nil
