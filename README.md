@@ -13,7 +13,21 @@ After that you can invoke requests to OpenAI like
 ```bash
 curl http://localhost:8080/openai/v1/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  --user login_1:password1 \
+  -d '{
+    "model": "text-davinci-003",
+    "prompt": "Say this is a test",
+    "max_tokens": 7,
+    "temperature": 0
+  }' -v
+```
+
+
+
+```bash
+curl http://localhost:8080/openai/v1/completions \
+  -H "Content-Type: application/json" \
+  --user login_1:password1 \
   -d '{
     "model": "text-davinci-003",
     "prompt": "Say this is a test",
@@ -27,7 +41,7 @@ Or
 ```bash
 curl http://localhost:8080/openai/v1/images/generations \
   -H "Content-Type: application/json" \
-  -H "Authorization: test" \
+  --user login_1:password1 \
   -d '{
     "prompt": "The emblem for the channel in telegrams on p2p cryptocurrency arbitration",
     "n": 2,
@@ -38,7 +52,7 @@ curl http://localhost:8080/openai/v1/images/generations \
 ```bash
 curl http://localhost:8080/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: test" \
+  --user login_1:password1 \
   -d '{
     "model": "gpt-3.5-turbo",                                                                                         
     "messages": [{"role": "user", "content": "Hello!"}]
@@ -49,4 +63,10 @@ To see the full requests and responses, use `-log-level=trace` flag.
 
 ```bash
 go run . -log-level=trace server -db db.sqlite3 -openai-token sk-YOUROPENAITOKEN
+```
+
+TTo create new DB with test users
+
+```bash
+go run . initdb -add-test-users
 ```

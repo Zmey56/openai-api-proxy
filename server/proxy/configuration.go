@@ -1,6 +1,8 @@
 package proxy
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Configuration struct {
 	OpenaiToken   string

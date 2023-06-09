@@ -1,18 +1,30 @@
 package authorization
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
+
+var (
+	InvalidUsernameOrPassword = errors.New("user does not exist or passwords do not match")
+)
 
 // StaticService is a static implementation of the authorization service
 // Good for testing, only one token is allowed - "test"
 type StaticService struct {
+	username string
+	password string
 }
 
-func (s StaticService) Verify(token string) (string, error) {
-	// TO DO connect to DB and get auth token
+func NewStaticService(u, p string) *StaticService {
+	return &StaticService{username: u, password: p}
+}
 
-	if token == "test" {
-		return "test", nil
+func (s StaticService) Verify(u, p string) error {
+
+	if strings.ToLower(s.username) == strings.ToLower(u) && s.password == p {
+		return nil
 	}
 
-	return "", errors.New("unknown token")
+	return InvalidUsernameOrPassword
 }

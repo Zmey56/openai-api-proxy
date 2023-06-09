@@ -1,8 +1,8 @@
 module github.com/Zmey56/openai-api-proxy
 
-go 1.19
+go 1.20
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/mattn/go-sqlite3 v1.14.16 // indirect
+	github.com/mattn/go-sqlite3 v1.14.16
+	golang.org/x/crypto v0.9.0
 )

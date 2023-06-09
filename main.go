@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/authorization"
@@ -21,11 +21,13 @@ var (
 	openaiToken   = serverCmd.String("openai-token", os.Getenv("OPENAI_TOKEN"), "the token used to communicate with OpenAI API")
 	openaiAddress = serverCmd.String("openai-address", "https://api.openai.com", "the address of the OpenAI API")
 	serverAddress = serverCmd.String("local-addr", "localhost:8080", "the binding for the server (host and port)")
-	serverDBLoc   = serverCmd.String("db-location", "db.sqlite3", "the location of the database")
+	serverDBLoc   = serverCmd.String("db-location", "sqlite3.db", "the location of the database")
 
 	initdbCmd    = flag.NewFlagSet("initdb", flag.ExitOnError)
-	initdbDBLoc  = initdbCmd.String("db-location", "db.sqlite3", "the location of the database")
+	initdbDBLoc  = initdbCmd.String("db-location", "sqlite3.db", "the location of the database")
 	addTestUsers = initdbCmd.Bool("add-test-users", false, "add test users to the database")
+
+	InvalidUsernameOrPassword = errors.New("user does not exist or passwords do not match")
 )
 
 func printUsage() {
@@ -95,53 +97,75 @@ func main() {
 }
 
 func runServer() error {
-	mux := http.NewServeMux()
-
-	proxyInst, err := proxy.NewProxy(proxy.Configuration{
-		OpenaiToken:   *openaiToken,
-		OpenaiAddress: *openaiAddress,
-	})
+	db, err := repository.NewSQLite(*serverDBLoc)
 	if err != nil {
 		return err
 	}
 
-	authService := authorization.StaticService{}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Error.Fatal(err)
+		}
+	}()
 
-	fmt.Println("proxyInst", proxyInst)
-	fmt.Println("authService", authService)
+	mux := http.NewServeMux()
 
+	proxyInst, err := proxy.NewProxy(
+		proxy.Configuration{
+			OpenaiToken:   *openaiToken,
+			OpenaiAddress: *openaiAddress,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	authDB := authorization.NewDatabaseService(db)
+
+	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
 		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authService),
+			middlewares.AuthorizationMiddleware(proxyInst, authDB),
 			"/openai/",
 		),
+	)
+
+	versionHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("\"0.0.0\"\n"))
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// curl -u user:password http://localhost:8080/version/
+	mux.Handle("/version/",
+		middlewares.AuthorizationMiddleware(versionHandler, authDB),
 	)
 
 	return http.ListenAndServe(*serverAddress, mux)
 }
 
 func runInitDb() error {
-	dbLocation := *initdbDBLoc
-
-	log.Debug.Printf("creating database in file %s", dbLocation)
-
-	db, err := sql.Open("sqlite3", dbLocation)
+	db, err := repository.NewSQLite(*initdbDBLoc)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			log.Error.Printf("failed to close database: %s", err)
+			log.Error.Fatal(err)
 		}
 	}()
 
-	repository.CreatedTableUsers(db)
-
-	if *addTestUsers {
-		repository.AddTestUsers(db)
+	err = db.CreatedTableUsers()
+	if err != nil {
+		return err
 	}
 
-	log.Debug.Printf("database created successfully at %s", dbLocation)
+	if *addTestUsers {
+		db.AddTestUsers()
+	}
+
 	return nil
 }

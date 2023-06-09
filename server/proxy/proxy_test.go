@@ -74,8 +74,13 @@ func TestProxy(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		login := "test"
+		pass := "test_password"
+
+		staticServiceAuth := *authorization.NewStaticService(login, pass)
+
 		proxyServer := httptest.NewServer(middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(p, authorization.StaticService{}),
+			middlewares.AuthorizationMiddleware(p, staticServiceAuth),
 			"/openai/",
 		))
 		defer proxyServer.Close()
@@ -89,8 +94,9 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		request.Header.Add("Content-Type", "application/json")
-		request.Header.Add("Authorization", "test")
+		request.SetBasicAuth(login, pass)
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			t.Fatal(err)

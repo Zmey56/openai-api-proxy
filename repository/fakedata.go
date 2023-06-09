@@ -1,20 +1,24 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/log"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-func AddTestUsers(db *sql.DB) {
+func (db *DBImpl) AddTestUsers() error {
 	// Generating random data for the "users" table
 	for i := 1; i <= 10; i++ {
 
 		login := fmt.Sprintf("login_%d", i)
 		firstName := fmt.Sprintf("first_name%d", i)
 		lastName := fmt.Sprintf("last_name%d", i)
-		hashedPassword := fmt.Sprintf("password%d", i)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(fmt.Sprintf("password%d", i)), bcrypt.DefaultCost)
+		if err != nil {
+			log.Debug.Printf("failed to generate hash from password %d", err)
+			return err
+		}
 		email := fmt.Sprintf("user%d@example.com", i)
 		accessLevel := i
 		amountMoney := 100.10 / float64(i)
@@ -24,7 +28,8 @@ func AddTestUsers(db *sql.DB) {
 		updatedAt := time.Now()
 
 		// Inserting the random data into the "users" table
-		_, err := db.Exec(`INSERT INTO users (login, first_name, last_name, hashed_password, email, access_level,
+
+		_, err = db.db.Exec(`INSERT INTO users (login, first_name, last_name, hashed_password, email, access_level,
                    amount_money, tokens, auth_token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			login, firstName, lastName, hashedPassword, email, accessLevel,
 			amountMoney, tokens, authToken, createdAt, updatedAt)
@@ -35,6 +40,8 @@ func AddTestUsers(db *sql.DB) {
 		if log.IsDebug() {
 			log.Debug.Printf("created user %s, token %s", login, authToken)
 		}
+		
 	}
-	log.Info.Println("test users has been created")
+
+	return nil
 }

@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -54,6 +55,8 @@ type Proxy struct {
 	conf Configuration
 
 	proxy *httputil.ReverseProxy
+
+	DBConnection *sql.DB
 }
 
 func (s *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
