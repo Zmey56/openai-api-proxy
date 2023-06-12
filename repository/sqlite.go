@@ -82,27 +82,36 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 	return errors.New("user not found")
 }
 
-func (db *DBImpl) CalculateTokens(token int, login string) error {
+func (db *DBImpl) CalculateTokens(token int, user string) error {
+
 	query := `SELECT tokens FROM users WHERE login = ?`
-	rows, err := db.db.Query(query, strings.ToLower(login))
+	rows, err := db.db.Query(query, strings.ToLower(user))
 	if err != nil {
 		log.Error.Print("Problem with calculate tokens:", err)
 		return err
 	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Debug.Printf("failed to close rows: %s", err)
+		}
+	}()
 
+	newVolume := 0
 	if rows.Next() {
 		var volume int
 		err = rows.Scan(&volume)
 		if err != nil {
-			log.Error.Printf("Problem scan for user %s values of token: %s", login, err)
+			log.Error.Printf("Problem scan for user %s values of token: %s", user, err)
 		}
-		newVolume := volume - token
-		queryUpdate := `UPDATE users SET ? WHERE login = ?`
-		_, err = db.db.Exec(queryUpdate, newVolume, login)
-		if err != nil {
-			log.Error.Print("Error executing the query:", err)
-			return err
-		}
+		newVolume = volume - token
+	}
+
+	queryUpdate := `UPDATE users SET tokens=? WHERE login = ?`
+	_, err = db.db.Exec(queryUpdate, newVolume, user)
+	if err != nil {
+		log.Error.Print("Error executing the query:", err)
+		return err
 	}
 
 	log.Error.Print("Problem with return calculate tokens:", err)

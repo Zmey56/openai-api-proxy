@@ -20,5 +20,6 @@ func (s DatabaseService) Verify(username, password string) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

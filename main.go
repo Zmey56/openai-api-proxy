@@ -115,6 +115,7 @@ func runServer() error {
 		proxy.Configuration{
 			OpenaiToken:   *openaiToken,
 			OpenaiAddress: *openaiAddress,
+			DBConnection:  db,
 		},
 	)
 
