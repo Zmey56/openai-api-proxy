@@ -126,16 +126,14 @@ func runServer() error {
 
 	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
-		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authDB),
-			"/openai/",
-		),
-	)
+		middlewares.RemovePathPrefixMiddleware(middlewares.AuthorizationMiddleware(proxyInst, authDB), "/openai/"))
 
 	versionHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("\"0.0.0\"\n"))
 		w.WriteHeader(http.StatusOK)
 	})
+
+	fmt.Println(versionHandler)
 
 	// curl -u user:password http://localhost:8080/version/
 	mux.Handle("/version/",
