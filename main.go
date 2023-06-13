@@ -134,8 +134,6 @@ func runServer() error {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	fmt.Println(versionHandler)
-
 	// curl -u user:password http://localhost:8080/version/
 	mux.Handle("/version/",
 		middlewares.AuthorizationMiddleware(versionHandler, authDB),

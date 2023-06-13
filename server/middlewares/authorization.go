@@ -27,6 +27,14 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 		err := service.Verify(username, pass)
 
 		if err != nil {
+			if err.Error() == "not enough tokens" {
+				log.Warning.Printf("authorization failed because user - %s"+
+					" doesn't have tokens for job. %s", username, err)
+				_, _ = io.Copy(io.Discard, r.Body)
+				_ = r.Body.Close()
+				http.Error(w, "User doesn't have tokens for working", http.StatusForbidden)
+				return
+			}
 			log.Warning.Printf("authorization failed for user %s. %s", username, err)
 
 			_, _ = io.Copy(io.Discard, r.Body)
@@ -38,7 +46,7 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 
 		// set our own user to the header
 		r.Header.Set("openai-api-proxy-user", username)
-		
+
 		next.ServeHTTP(w, r)
 
 	})
