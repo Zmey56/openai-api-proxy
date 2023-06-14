@@ -1,8 +1,10 @@
 package middlewares
 
 import (
+	"errors"
 	"github.com/Zmey56/openai-api-proxy/authorization"
 	"github.com/Zmey56/openai-api-proxy/log"
+	"github.com/Zmey56/openai-api-proxy/repository"
 	"io"
 	"net/http"
 )
@@ -27,7 +29,7 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 		err := service.Verify(username, pass)
 
 		if err != nil {
-			if err.Error() == "not enough tokens" {
+			if errors.Is(err, repository.ErrNoTokensLeft) {
 				log.Warning.Printf("authorization failed because user - %s"+
 					" doesn't have tokens for job. %s", username, err)
 				_, _ = io.Copy(io.Discard, r.Body)

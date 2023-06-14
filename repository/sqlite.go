@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+var ErrNoTokensLeft = errors.New("No tokens left")
+
 type DBImpl struct {
 	db *sql.DB
 }
@@ -77,7 +79,7 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 			return err
 		} else if tokens < 0 {
 			log.Error.Print("Available tokens less zero")
-			return errors.New("not enough tokens")
+			return ErrNoTokensLeft
 		} else {
 			return nil
 		}
