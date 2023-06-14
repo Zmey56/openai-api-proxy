@@ -4,8 +4,8 @@ WORKDIR /openai-api-proxy
 
 COPY . .
 
-RUN go build -o main .
+RUN go build -o openai-api-proxy .
 
-CMD ["./main"]
+CMD ["./openai-api-proxy", "server", "-openai-token", "$OPENAI_TOKEN"]
 
 EXPOSE 8080
