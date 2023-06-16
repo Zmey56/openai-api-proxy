@@ -29,21 +29,16 @@ func AuthorizationMiddleware(next http.Handler, service authorization.Service) h
 		err := service.Verify(username, pass)
 
 		if err != nil {
-			if errors.Is(err, repository.ErrNoTokensLeft) {
-				log.Warning.Printf("authorization failed because user - %s"+
-					" doesn't have tokens for job. %s", username, err)
+			if err != nil {
+				log.Warning.Printf("authorization failed for user %s. %s", username, err)
 				_, _ = io.Copy(io.Discard, r.Body)
 				_ = r.Body.Close()
-				http.Error(w, "User doesn't have tokens for working", http.StatusForbidden)
-				return
+				if errors.Is(err, repository.ErrNoTokensLeft) {
+					http.Error(w, "User doesn't have tokens for working", http.StatusForbidden)
+					return
+				}
+				http.Error(w, "User was not found or password did not match", http.StatusUnauthorized)
 			}
-			log.Warning.Printf("authorization failed for user %s. %s", username, err)
-
-			_, _ = io.Copy(io.Discard, r.Body)
-			_ = r.Body.Close()
-
-			http.Error(w, "User was not found or password did not match", http.StatusUnauthorized)
-			return
 		}
 
 		// set our own user to the header
