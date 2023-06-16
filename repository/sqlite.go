@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+var ErrNoTokensLeft = errors.New("No tokens left")
+
 type DBImpl struct {
 	db *sql.DB
 }
@@ -50,7 +52,7 @@ func (db *DBImpl) CreatedTableUsers() error {
 }
 
 func (db *DBImpl) VerifyUserPass(user, pass string) error {
-	query := `SELECT hashed_password FROM users WHERE login = ?`
+	query := `SELECT hashed_password, tokens FROM users WHERE login = ?`
 	rows, err := db.db.Query(query, strings.ToLower(user))
 	if err != nil {
 		return err
@@ -64,7 +66,8 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 
 	if rows.Next() {
 		var hashedPassword []byte
-		err = rows.Scan(&hashedPassword)
+		var tokens int
+		err = rows.Scan(&hashedPassword, &tokens)
 		if err != nil {
 			log.Error.Print("Can't Scan password")
 			return err
@@ -74,10 +77,26 @@ func (db *DBImpl) VerifyUserPass(user, pass string) error {
 		if err != nil {
 			log.Error.Print("Password not found")
 			return err
+		} else if tokens < 0 {
+			log.Error.Print("Available tokens less zero")
+			return ErrNoTokensLeft
 		} else {
 			return nil
 		}
 	}
 
 	return errors.New("user not found")
+}
+
+func (db *DBImpl) CalculateTokens(token int, user string) error {
+
+	query := `UPDATE users SET tokens=tokens - ? WHERE login = ?`
+
+	_, err := db.db.Exec(query, token, user)
+	if err != nil {
+		log.Error.Print("Error executing the query for calculating tokens:", err)
+		return err
+	}
+
+	return nil
 }

@@ -2,11 +2,11 @@ package proxy
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Zmey56/openai-api-proxy/log"
+	"github.com/Zmey56/openai-api-proxy/repository"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -36,6 +36,7 @@ func NewProxy(conf Configuration) (*Proxy, error) {
 		id64Generator: newID64Generator(),
 		openaiURL:     openaiURL,
 		conf:          conf,
+		DBConnection:  conf.DBConnection,
 	}
 
 	p.proxy = &httputil.ReverseProxy{
@@ -56,7 +57,7 @@ type Proxy struct {
 
 	proxy *httputil.ReverseProxy
 
-	DBConnection *sql.DB
+	DBConnection *repository.DBImpl
 }
 
 func (s *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -168,6 +169,12 @@ func (s *Proxy) modifyResponse(response *http.Response) error {
 	}
 
 	log.Info.Printf(logString.String())
+
+	err := s.DBConnection.CalculateTokens(responseObj.Usage.TotalTokens, user)
+	if err != nil {
+		log.Error.Println("Problem with calculation tokens in Proxy", err)
+		return err
+	}
 
 	response.Body = io.NopCloser(&body)
 	return nil

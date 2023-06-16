@@ -115,6 +115,7 @@ func runServer() error {
 		proxy.Configuration{
 			OpenaiToken:   *openaiToken,
 			OpenaiAddress: *openaiAddress,
+			DBConnection:  db,
 		},
 	)
 
@@ -126,11 +127,7 @@ func runServer() error {
 
 	// curl -u user:password http://localhost:8080/openai/chat/completion
 	mux.Handle("/openai/",
-		middlewares.RemovePathPrefixMiddleware(
-			middlewares.AuthorizationMiddleware(proxyInst, authDB),
-			"/openai/",
-		),
-	)
+		middlewares.RemovePathPrefixMiddleware(middlewares.AuthorizationMiddleware(proxyInst, authDB), "/openai/"))
 
 	versionHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("\"0.0.0\"\n"))
