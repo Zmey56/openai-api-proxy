@@ -13,7 +13,7 @@ After that you can invoke requests to OpenAI like
 ```bash
 curl http://localhost:8080/openai/v1/completions \
   -H "Content-Type: application/json" \
-  --user login_1:password1 \
+  --user login_4:password4 \
   -d '{
     "model": "text-davinci-003",
     "prompt": "Say this is a test",
@@ -69,4 +69,15 @@ TTo create new DB with test users
 
 ```bash
 go run . initdb -add-test-users
+```
+
+Docker
+```bash
+docker  exec openai-api-proxy /openai-api-proxy/openai-api-proxy initdb -db-location /data/sqlite3.db -add-test-users 
+
+docker run --rm -e OPENAI_TOKEN=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 -p 8080:8080 -v openai-api-proxy-volume:/data --name openai-api-proxy openai-api-proxy
+
+docker run --rm -e OPENAI_TOKEN=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 -p 8080:8080 openai-api-proxy
+
+docker build -t openai-api-proxy .  
 ```
