@@ -73,11 +73,9 @@ go run . initdb -add-test-users
 
 Docker
 ```bash
+docker build -t openai-api-proxy . 
+
+docker run --rm -e OPENAI_TOKEN=$OPENAI_TOKEN -p 8080:8080 -v openai-api-proxy-volume:/data --name openai-api-proxy openai-api-proxy
+
 docker  exec openai-api-proxy /openai-api-proxy/openai-api-proxy initdb -db-location /data/sqlite3.db -add-test-users 
-
-docker run --rm -e OPENAI_TOKEN=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 -p 8080:8080 -v openai-api-proxy-volume:/data --name openai-api-proxy openai-api-proxy
-
-docker run --rm -e OPENAI_TOKEN=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 -p 8080:8080 openai-api-proxy
-
-docker build -t openai-api-proxy .  
 ```
