@@ -7,3 +7,4 @@ testusers.go
 test.*
 openai-api-proxy
 .DS_Store
+.DS_Store/
